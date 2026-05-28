@@ -1,30 +1,33 @@
-<!-- game_coinflip.html -->
 {% extends "layout.html" %}
 {% block content %}
 <div class="game-container">
-    <h2><i class="fas fa-coins"></i> Coin Flip – Орёл или решка</h2>
+    <h2><i class="fas fa-coins"></i> COIN FLIP – Орёл или решка</h2>
     <div class="coin" id="coinDisplay">🪙</div>
     <div class="controls">
-        <input type="number" id="coinBet" value="100">
-        <button id="coinHeads" class="btn-primary">Орёл</button>
-        <button id="coinTails" class="btn-primary">Решка</button>
+        <input type="number" id="coinBet" value="100" step="50">
+        <button id="coinHeads" class="btn-primary">Орёл 🦅</button>
+        <button id="coinTails" class="btn-primary">Решка 🪙</button>
     </div>
     <div id="coinResult"></div>
 </div>
 <script>
     async function flip(choice) {
         const bet = parseInt(document.getElementById('coinBet').value);
-        if (isNaN(bet) || bet < 10) return alert('Ставка от 10₽');
+        if (isNaN(bet) || bet < 10) return showToast('Ставка от 10₽', true);
         const res = await fetch('/api/coinflip/flip', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ bet, choice })
         });
         const data = await res.json();
-        if (data.error) return alert(data.error);
+        if (data.error) return showToast(data.error, true);
+        const resultText = data.result === 'heads' ? 'Орёл 🦅' : 'Решка 🪙';
         document.getElementById('coinDisplay').innerHTML = data.result === 'heads' ? '🦅' : '🪙';
-        if (data.win > 0) document.getElementById('coinResult').innerHTML = `Выигрыш: ${data.win} ₽`;
-        else document.getElementById('coinResult').innerHTML = `Проигрыш`;
+        if (data.win > 0) {
+            document.getElementById('coinResult').innerHTML = `Выигрыш: ${data.win} ₽`;
+            if (window.createConfetti) window.createConfetti();
+        } else {
+            document.getElementById('coinResult').innerHTML = `Проигрыш (выпал ${resultText})`;
+        }
         await updateBalanceUI();
     }
     document.getElementById('coinHeads').onclick = () => flip('heads');
