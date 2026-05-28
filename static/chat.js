@@ -1,9 +1,9 @@
-// Автономный чат-виджет (можно вставить в layout.html)
 let chatInterval = null;
 
 async function loadChatMessages() {
     try {
         const res = await fetch('/api/chat/messages');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const msgs = await res.json();
         const container = document.getElementById('chatMessages');
         if (!container) return;
@@ -15,7 +15,9 @@ async function loadChatMessages() {
             </div>
         `).join('');
         container.scrollTop = container.scrollHeight;
-    } catch(e) {}
+    } catch(e) {
+        console.error('loadChatMessages error:', e);
+    }
 }
 
 async function sendChatMessage() {
@@ -23,14 +25,27 @@ async function sendChatMessage() {
     const msg = input.value.trim();
     if (!msg) return;
     try {
-        await fetch('/api/chat/send', {
+        const res = await fetch('/api/chat/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: msg })
         });
-        input.value = '';
-        loadChatMessages();
-    } catch(e) {}
+        if (res.status === 401) {
+            showToast('❌ Вы не авторизованы. Войдите, чтобы писать в чат.', true);
+            return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (data.ok) {
+            input.value = '';
+            loadChatMessages();
+        } else {
+            showToast(data.error || 'Ошибка отправки', true);
+        }
+    } catch(e) {
+        console.error('sendChatMessage error:', e);
+        showToast('Ошибка отправки сообщения', true);
+    }
 }
 
 function escapeHtml(str) {
@@ -42,18 +57,20 @@ function escapeHtml(str) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const sendBtn = document.getElementById('chatSend');
+function initChat() {
+    const sendBtn = document.getElementById('chatSendBtn');
     const chatInput = document.getElementById('chatInput');
-    if (sendBtn) {
+    if (sendBtn && chatInput) {
         sendBtn.onclick = sendChatMessage;
-        if (chatInput) {
-            chatInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendChatMessage();
-            });
-        }
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendChatMessage();
+        });
         loadChatMessages();
         if (chatInterval) clearInterval(chatInterval);
         chatInterval = setInterval(loadChatMessages, 3000);
+    } else {
+        setTimeout(initChat, 500);
     }
-});
+}
+
+document.addEventListener('DOMContentLoaded', initChat);
