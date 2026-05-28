@@ -4,13 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>CashX – Элитное казино</title>
+    <!-- Font Awesome 6 (иконки) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
 </head>
 <body>
     <div class="app">
-        <div class="mobile-menu-toggle" id="mobileMenuToggle">☰</div>
+        <!-- Кнопка мобильного меню (бургер) -->
+        <div class="mobile-menu-toggle" id="mobileMenuToggle">
+            <i class="fas fa-bars"></i>
+        </div>
+
+        <!-- Боковое меню -->
         <aside class="sidebar" id="sidebar">
             <div class="logo">
                 <i class="fas fa-coins"></i>
@@ -31,9 +39,11 @@
             </nav>
             <div class="sidebar-footer">
                 <div class="online"><i class="fas fa-circle online-dot"></i> <span id="onlineCount">1,234</span> онлайн</div>
-                <div class="version">CashX v2.0</div>
+                <div class="version">CashX v2.0 | Ultimate Edition</div>
             </div>
         </aside>
+
+        <!-- Основной контент -->
         <main class="main">
             <div class="top-bar">
                 <div class="balance-widget">
@@ -42,7 +52,7 @@
                 </div>
                 <div class="user-area">
                     <span id="usernameDisplay" class="username">Гость</span>
-                    <button id="loginNavBtn" class="login-nav-btn" style="display:inline-block;"><i class="fas fa-sign-in-alt"></i> Войти</button>
+                    <button id="loginNavBtn" class="login-nav-btn"><i class="fas fa-sign-in-alt"></i> Войти</button>
                     <button id="logoutBtn" class="logout-btn" style="display:none;"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
             </div>
@@ -51,7 +61,11 @@
             </div>
         </main>
     </div>
+
+    <!-- Уведомления -->
     <div id="toast" class="toast"></div>
+
+    <!-- Скрипты -->
     <script src="/static/script.js"></script>
     <script src="/static/chat.js"></script>
     <script src="/static/animations.js"></script>
