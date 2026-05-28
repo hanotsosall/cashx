@@ -40,7 +40,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# ---------- Страницы (всегда рендерят HTML, без редиректов) ----------
+# ---------- Страницы ----------
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -48,6 +48,10 @@ def index():
 @app.route('/games')
 def games():
     return render_template('games.html')
+
+@app.route('/login')
+def login_page():
+    return render_template('login.html')
 
 @app.route('/game/slots')
 def game_slots():
@@ -138,27 +142,49 @@ def get_balance():
     user = User.query.get(session['user_id'])
     return jsonify({'balance': user.balance})
 
-# ---------- Игровые API (заглушки – нужно подключить реальные модули) ----------
+# ---------- Игровые API (реалистичные заглушки, можно доработать) ----------
 @app.route('/api/slots/spin', methods=['POST'])
 @login_required
 def slots_spin():
-    # Заглушка
-    return jsonify({'reels': [['🍒','🍒','🍒']], 'win': 0})
+    bet = request.json.get('bet', 10)
+    symbols = ['🍒','🍋','🍊','🍉','💎','7️⃣','🐉']
+    reels = [[random.choice(symbols) for _ in range(3)] for _ in range(5)]
+    win = 0
+    for row in range(3):
+        if reels[0][row] == reels[1][row] == reels[2][row] == reels[3][row] == reels[4][row]:
+            mult = {'🍒':2, '🍋':3, '🍊':4, '🍉':5, '💎':10, '7️⃣':20, '🐉':50}.get(reels[0][row], 1)
+            win += bet * mult
+    if all(reels[i][1] == '🐉' for i in range(5)):
+        win += 5000
+    return jsonify({'reels': reels, 'win': win})
 
 @app.route('/api/mines/generate', methods=['POST'])
 @login_required
 def mines_generate():
-    return jsonify({'grid': [[0]*5], 'bet': 10})
+    mines = request.json.get('mines', 3)
+    bet = request.json.get('bet', 10)
+    grid = [[0]*5 for _ in range(5)]
+    positions = [(i,j) for i in range(5) for j in range(5)]
+    for _ in range(mines):
+        r,c = random.choice(positions)
+        grid[r][c] = 1
+        positions.remove((r,c))
+    return jsonify({'grid': grid, 'bet': bet})
 
 @app.route('/api/mines/reveal', methods=['POST'])
 @login_required
 def mines_reveal():
+    row = request.json.get('row')
+    col = request.json.get('col')
+    # Для демо всегда безопасно
     return jsonify({'boom': False, 'multiplier': 1.5})
 
 @app.route('/api/crash/start', methods=['POST'])
 @login_required
 def crash_start():
-    return jsonify({'session_id': 'demo', 'balance': 1000})
+    bet = request.json.get('bet', 10)
+    session_id = secrets.token_urlsafe(16)
+    return jsonify({'session_id': session_id, 'balance': 1000})
 
 @app.route('/api/crash/cashout', methods=['POST'])
 @login_required
@@ -167,27 +193,49 @@ def crash_cashout():
 
 @app.route('/api/crash/status', methods=['GET'])
 def crash_status():
-    return jsonify({'running': True, 'multiplier': 1.5})
+    return jsonify({'running': True, 'multiplier': round(random.uniform(1.0, 5.0), 2)})
 
 @app.route('/api/dice/roll', methods=['POST'])
 @login_required
 def dice_roll():
-    return jsonify({'roll': 50, 'win': 0})
+    bet = request.json.get('bet', 10)
+    pred = request.json.get('prediction')
+    target = request.json.get('target', 50)
+    roll = random.randint(1,100)
+    win = 0
+    if pred == 'under' and roll < target:
+        win = int(bet * 1.98)
+    elif pred == 'over' and roll > target:
+        win = int(bet * 1.98)
+    elif pred == 'number' and roll == target:
+        win = bet * 50
+    return jsonify({'roll': roll, 'win': win})
 
 @app.route('/api/coinflip/flip', methods=['POST'])
 @login_required
 def coinflip_flip():
-    return jsonify({'result': 'heads', 'win': 0})
+    bet = request.json.get('bet', 10)
+    choice = request.json.get('choice')
+    result = random.choice(['heads', 'tails'])
+    win = bet * 2 if choice == result else 0
+    return jsonify({'result': result, 'win': win})
 
 @app.route('/api/keno/draw', methods=['POST'])
 @login_required
 def keno_draw():
-    return jsonify({'drawn': [1,2,3], 'matches': 0, 'win': 0})
+    bet = request.json.get('bet', 10)
+    picks = request.json.get('picks', [])
+    drawn = random.sample(range(1,81), 20)
+    matches = len(set(picks) & set(drawn))
+    win = matches * (bet // 10) * 2
+    return jsonify({'drawn': drawn, 'matches': matches, 'win': win})
 
 @app.route('/api/boomcity/spin', methods=['POST'])
 @login_required
 def boomcity_spin():
-    return jsonify({'win': 0})
+    bet = request.json.get('bet', 10)
+    win = random.choice([0, bet, bet*2, bet*5])
+    return jsonify({'win': win})
 
 @app.route('/api/place_bet', methods=['POST'])
 @login_required
@@ -198,14 +246,11 @@ def place_bet():
     user = User.query.get(session['user_id'])
     if bet > 0 and user.balance < bet:
         return jsonify({'error': 'Недостаточно средств'}), 400
-    if bet > 0:
-        user.balance -= bet
-    if win > 0:
-        user.balance += win
+    user.balance = user.balance - bet + win
     db.session.commit()
     return jsonify({'balance': user.balance})
 
-# ---------- Бонусы, рефералы, чат, админка (сокращённо, но рабоче) ----------
+# ---------- Бонусы, рефералы, чат, админка ----------
 @app.route('/api/bonus/apply', methods=['POST'])
 @login_required
 def apply_bonus():
