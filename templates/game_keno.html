@@ -1,13 +1,50 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="game-container">
-    <h2>🎫 Keno – Выбери номера</h2>
+    <h2><i class="fas fa-bingo"></i> KENO – Выбери номера</h2>
     <div class="keno-board" id="kenoBoard"></div>
-    <div class="game-controls">
-        <input type="number" id="kenoBet" value="10">
-        <button id="kenoPlayBtn" class="game-action-btn">Играть</button>
+    <div class="controls">
+        <input type="number" id="kenoBet" value="100" step="50">
+        <button id="kenoPlayBtn" class="btn-primary">Играть</button>
     </div>
-    <div id="kenoResult" class="result-area"></div>
+    <div id="kenoResult"></div>
 </div>
-<script src="/static/keno.js"></script>
+<script>
+    let selected = [];
+    const board = document.getElementById('kenoBoard');
+    for (let i=1; i<=80; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'keno-cell';
+        cell.innerText = i;
+        cell.onclick = () => {
+            if (selected.includes(i)) {
+                selected = selected.filter(x => x !== i);
+                cell.style.background = '#2a2e44';
+            } else if (selected.length < 10) {
+                selected.push(i);
+                cell.style.background = '#f5b042';
+                cell.style.color = 'black';
+            }
+        };
+        board.appendChild(cell);
+    }
+    document.getElementById('kenoPlayBtn').onclick = async () => {
+        const bet = parseInt(document.getElementById('kenoBet').value);
+        if (selected.length === 0) return showToast('Выберите хотя бы одно число', true);
+        const res = await fetch('/api/keno/draw', {
+            method: 'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ bet, picks: selected })
+        });
+        const data = await res.json();
+        if (data.error) return showToast(data.error, true);
+        document.getElementById('kenoResult').innerHTML = `Выпало: ${data.drawn.join(', ')}<br>Совпадений: ${data.matches}<br>Выигрыш: ${data.win} ₽`;
+        if (data.win > 0 && window.createConfetti) window.createConfetti();
+        await updateBalanceUI();
+    };
+</script>
+<style>
+    .keno-board { display: grid; grid-template-columns: repeat(8,1fr); gap: 5px; max-width: 600px; margin: 20px auto; }
+    .keno-cell { background: #1e2130; padding: 8px; text-align: center; border-radius: 12px; cursor: pointer; transition: 0.1s; }
+    .keno-cell:hover { background: #2a2e44; }
+</style>
 {% endblock %}
