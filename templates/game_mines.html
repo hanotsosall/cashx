@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="game-container">
+    <h2>💣 Mines – Сапёр на деньги</h2>
+    <div class="mines-grid" id="minesGrid"></div>
+    <div class="game-controls">
+        <select id="minesCount"><option>3</option><option>5</option><option>7</option><option>10</option></select>
+        <input type="number" id="minesBet" placeholder="Ставка" value="10">
+        <button id="minesStartBtn" class="game-action-btn">Начать игру</button>
+    </div>
+    <div id="minesResult" class="result-area"></div>
+</div>
+<script src="/static/mines.js"></script>
+{% endblock %}
