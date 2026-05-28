@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>👤 Профиль</h2>
+<div class="profile-card">
+    <p>Имя: <strong id="profileUsername"></strong></p>
+    <p>Основной баланс: <span id="profileBalance"></span></p>
+    <p>Бонусный баланс: <span id="profileBonus"></span></p>
+    <p>Реферальная ссылка: <input type="text" id="referralLink" readonly></p>
+    <button id="copyLinkBtn">Копировать</button>
+</div>
+<div class="bonus-code-section">
+    <h3>🎁 Активировать бонус-код</h3>
+    <input type="text" id="bonusCodeInput" placeholder="XXXX-XXXX">
+    <button id="applyBonusBtn">Активировать</button>
+</div>
+<script>
+    async function loadProfile() {
+        const res = await fetch('/api/user');
+        const data = await res.json();
+        document.getElementById('profileUsername').innerText = data.username;
+        document.getElementById('profileBalance').innerText = data.balance;
+        document.getElementById('profileBonus').innerText = data.bonus_balance;
+        const refRes = await fetch('/api/referral/link');
+        const refData = await refRes.json();
+        document.getElementById('referralLink').value = refData.link;
+    }
+    document.getElementById('copyLinkBtn').onclick = () => {
+        document.getElementById('referralLink').select();
+        document.execCommand('copy');
+        alert('Ссылка скопирована');
+    };
+    document.getElementById('applyBonusBtn').onclick = async () => {
+        const code = document.getElementById('bonusCodeInput').value;
+        const res = await fetch('/api/bonus/apply', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+        const data = await res.json();
+        alert(data.ok ? `Получено ${data.amount} бонусов` : data.error);
+        loadProfile();
+    };
+    loadProfile();
+</script>
+{% endblock %}
