@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1 class="page-title">Все игры CashX</h1>
+<div class="games-catalog">
+    <div class="game-card" onclick="location.href='/game/slots'"><div class="game-icon">🎰</div><h3>Slots</h3><p>Классические слоты</p></div>
+    <div class="game-card" onclick="location.href='/game/mines'"><div class="game-icon">💣</div><h3>Mines</h3><p>Сапёр на деньги</p></div>
+    <div class="game-card" onclick="location.href='/game/crash'"><div class="game-icon">💥</div><h3>Crash</h3><p>Самолёт с множителем</p></div>
+    <div class="game-card" onclick="location.href='/game/dice'"><div class="game-icon">🎲</div><h3>Dice</h3><p>Предскажи число</p></div>
+    <div class="game-card" onclick="location.href='/game/coinflip'"><div class="game-icon">🪙</div><h3>Coin Flip</h3><p>Удвой за секунду</p></div>
+    <div class="game-card" onclick="location.href='/game/keno'"><div class="game-icon">🎫</div><h3>Keno</h3><p>Лотерея 80 шаров</p></div>
+    <div class="game-card" onclick="location.href='/game/boomcity'"><div class="game-icon">💣</div><h3>Boom City</h3><p>Взрывной выигрыш</p></div>
+</div>
+{% endblock %}
