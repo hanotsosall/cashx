@@ -189,14 +189,45 @@ def get_balance():
 def slots_spin():
     bet = request.json.get('bet', 10)
     symbols = ['🍒','🍋','🍊','🍉','💎','7️⃣','🐉']
-    reels = [[random.choice(symbols) for _ in range(3)] for _ in range(5)]
+    # Веса для генерации (вероятность дракона ниже, а популярных символов выше)
+    weights = [30, 25, 20, 15, 8, 4, 2]  # чем больше число, тем чаще символ
+    reels = []
+    for _ in range(5):
+        col = []
+        for _ in range(3):
+            sym = random.choices(symbols, weights=weights)[0]
+            col.append(sym)
+        reels.append(col)
+    
     win = 0
-    for row in range(3):
-        if all(reels[col][row] == reels[0][row] for col in range(1,5)):
-            mult = {'🍒':2, '🍋':3, '🍊':4, '🍉':5, '💎':10, '7️⃣':20, '🐉':50}.get(reels[0][row], 1)
-            win += bet * mult
-    if all(reels[i][1] == '🐉' for i in range(5)):
+    # Линии: верхняя (row=0), центральная (row=1), нижняя (row=2), две диагонали
+    lines = [
+        [(0,0),(1,0),(2,0),(3,0),(4,0)],  # верх
+        [(0,1),(1,1),(2,1),(3,1),(4,1)],  # центр
+        [(0,2),(1,2),(2,2),(3,2),(4,2)],  # низ
+        [(0,0),(1,1),(2,2),(3,1),(4,0)],  # диагональ V
+        [(0,2),(1,1),(2,0),(3,1),(4,2)]   # диагональ Λ
+    ]
+    
+    # Стоимость символов
+    payouts = {'🍒':2, '🍋':3, '🍊':4, '🍉':5, '💎':10, '7️⃣':20, '🐉':50}
+    
+    for line in lines:
+        first_sym = reels[line[0][0]][line[0][1]]
+        count = 1
+        for (col, row) in line[1:]:
+            if reels[col][row] == first_sym:
+                count += 1
+            else:
+                break
+        if count >= 3:
+            win += bet * payouts.get(first_sym, 1) * (count - 2)
+    
+    # Джекпот за 5 драконов в центре
+    center_line = [reels[i][1] for i in range(5)]
+    if all(s == '🐉' for s in center_line):
         win += 5000
+    
     user = User.query.get(session['user_id'])
     user.balance += win - bet
     db.session.commit()
