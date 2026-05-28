@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>⚙️ Админ-панель</h2>
+<div class="admin-section">
+    <h3>Пользователи</h3>
+    <table id="usersTable"><thead><tr><th>ID</th><th>Логин</th><th>Баланс</th><th>Бонус</th><th>Admin</th></tr></thead><tbody></tbody></table>
+</div>
+<div class="admin-section">
+    <h3>Выдать бонус</h3>
+    <input type="text" id="bonusUsername" placeholder="Логин">
+    <input type="number" id="bonusAmount" placeholder="Сумма">
+    <button id="giveBonusBtn">Выдать</button>
+</div>
+<div class="admin-section">
+    <h3>Создать бонус-код</h3>
+    <input type="number" id="codeAmount" placeholder="Сумма">
+    <button id="genCodeBtn">Создать</button>
+    <div id="newCode"></div>
+</div>
+<script>
+    async function loadUsers() {
+        const res = await fetch('/api/admin/users');
+        const users = await res.json();
+        const tbody = document.querySelector('#usersTable tbody');
+        tbody.innerHTML = '';
+        users.forEach(u => {
+            const row = tbody.insertRow();
+            row.insertCell().innerText = u.id;
+            row.insertCell().innerText = u.username;
+            row.insertCell().innerText = u.balance;
+            row.insertCell().innerText = u.bonus_balance;
+            row.insertCell().innerText = u.is_admin ? 'Да' : 'Нет';
+        });
+    }
+    document.getElementById('giveBonusBtn').onclick = async () => {
+        const username = document.getElementById('bonusUsername').value;
+        const amount = document.getElementById('bonusAmount').value;
+        await fetch('/api/admin/bonus', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username, amount})});
+        loadUsers();
+    };
+    document.getElementById('genCodeBtn').onclick = async () => {
+        const amount = document.getElementById('codeAmount').value;
+        const res = await fetch('/api/admin/generate_code', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount})});
+        const data = await res.json();
+        document.getElementById('newCode').innerHTML = `Новый код: <strong>${data.code}</strong> на ${amount}`;
+    };
+    loadUsers();
+</script>
+{% endblock %}
