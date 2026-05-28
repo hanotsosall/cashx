@@ -1,82 +1,169 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="profile-container">
-    <h2><i class="fas fa-user"></i> Профиль</h2>
-    <div class="balance-card">
-        <p>Ваш баланс: <strong id="profileBalance">0</strong> ₽</p>
+    <h2><i class="fas fa-user-circle"></i> Мой профиль</h2>
+    <div class="profile-stats">
+        <div class="stat-card"><i class="fas fa-id-badge"></i> Логин: <strong id="profileUsername"></strong></div>
+        <div class="stat-card"><i class="fas fa-wallet"></i> Баланс: <strong id="profileBalance">0</strong> ₽</div>
     </div>
-    <div class="wallet-section">
-        <h3>Пополнение</h3>
-        <input type="number" id="depositAmount" placeholder="Сумма">
-        <select id="depositMethod">
-            <option value="card">Банковская карта</option>
-            <option value="crypto">Криптовалюта (USDT)</option>
-        </select>
-        <button id="depositBtn" class="btn-primary">Пополнить</button>
+
+    <div class="withdraw-section">
+        <h3><i class="fas fa-hand-holding-usd"></i> Вывод средств</h3>
+        <p class="min-withdraw">Минимальная сумма вывода: <strong>1000 ₽</strong></p>
+        <div class="input-group"><i class="fas fa-money-bill-wave"></i><input type="number" id="withdrawAmount" placeholder="Сумма вывода"></div>
+        <div class="input-group"><i class="fas fa-credit-card"></i><select id="withdrawMethod"><option value="card">Банковская карта</option><option value="crypto">Криптокошелёк (USDT)</option></select></div>
+        <div class="input-group"><i class="fas fa-address-book"></i><input type="text" id="withdrawAddress" placeholder="Номер карты / адрес кошелька"></div>
+        <button id="withdrawBtn" class="btn-success"><i class="fas fa-paper-plane"></i> Запросить вывод</button>
     </div>
-    <div class="wallet-section">
-        <h3>Вывод</h3>
-        <input type="number" id="withdrawAmount" placeholder="Сумма (мин. 1000₽)">
-        <select id="withdrawMethod">
-            <option value="card">На карту</option>
-            <option value="crypto">На криптокошелёк</option>
-        </select>
-        <input type="text" id="withdrawAddress" placeholder="Номер карты / адрес кошелька">
-        <button id="withdrawBtn" class="btn-success">Вывести</button>
-    </div>
+
     <div class="referral-section">
-        <h3>Реферальная ссылка</h3>
-        <input type="text" id="refLink" readonly>
-        <button id="copyRefBtn">Копировать</button>
+        <h3><i class="fas fa-users"></i> Реферальная программа</h3>
+        <p>Приглашайте друзей и получайте 10% от их проигрышей</p>
+        <div class="referral-link-box">
+            <input type="text" id="refLink" readonly>
+            <button id="copyRefBtn"><i class="fas fa-copy"></i> Копировать</button>
+        </div>
+    </div>
+
+    <div class="bonus-section">
+        <h3><i class="fas fa-gift"></i> Активировать бонус-код</h3>
+        <div class="input-group"><i class="fas fa-ticket-alt"></i><input type="text" id="bonusCode" placeholder="Введите код"></div>
+        <button id="applyBonusBtn" class="btn-primary"><i class="fas fa-check"></i> Активировать</button>
     </div>
 </div>
+
 <script>
-    async function loadBalance() {
+    async function loadProfile() {
         const res = await fetch('/api/user');
+        if(res.status === 401) return;
         const data = await res.json();
+        document.getElementById('profileUsername').innerText = data.username;
         document.getElementById('profileBalance').innerText = data.balance;
-        document.getElementById('refLink').value = `${window.location.origin}/?ref=${data.username}`;
+        const refRes = await fetch('/api/referral/link');
+        const refData = await refRes.json();
+        document.getElementById('refLink').value = refData.link;
     }
-    document.getElementById('depositBtn').onclick = async () => {
-        const amount = parseFloat(document.getElementById('depositAmount').value);
-        const method = document.getElementById('depositMethod').value;
-        if (isNaN(amount) || amount <= 0) return alert('Введите сумму');
-        const res = await fetch('/api/deposit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount, method })
-        });
-        const data = await res.json();
-        if (data.error) alert(data.error);
-        else {
-            alert(`Баланс пополнен на ${amount} ₽`);
-            loadBalance();
-        }
+
+    document.getElementById('copyRefBtn').onclick = () => {
+        const refInput = document.getElementById('refLink');
+        refInput.select();
+        document.execCommand('copy');
+        showToast('Реферальная ссылка скопирована');
     };
+
     document.getElementById('withdrawBtn').onclick = async () => {
         const amount = parseFloat(document.getElementById('withdrawAmount').value);
         const method = document.getElementById('withdrawMethod').value;
         const address = document.getElementById('withdrawAddress').value;
-        if (isNaN(amount) || amount < 1000) return alert('Мин. вывод 1000₽');
-        if (!address) return alert('Укажите реквизиты');
+        if(isNaN(amount) || amount < 1000) return showToast('Минимальная сумма вывода 1000 ₽', true);
+        if(!address) return showToast('Укажите реквизиты', true);
         const res = await fetch('/api/withdraw', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount, method, address })
         });
         const data = await res.json();
-        if (data.error) alert(data.error);
+        if(data.error) showToast(data.error, true);
+        else showToast(`Заявка на вывод ${amount} ₽ создана. Ожидайте обработки.`);
+        loadProfile();
+    };
+
+    document.getElementById('applyBonusBtn').onclick = async () => {
+        const code = document.getElementById('bonusCode').value.trim();
+        if(!code) return showToast('Введите код', true);
+        const res = await fetch('/api/bonus/apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        });
+        const data = await res.json();
+        if(data.error) showToast(data.error, true);
         else {
-            alert(`Заявка на вывод ${amount} ₽ создана`);
-            loadBalance();
+            showToast(`Бонус ${data.amount} ₽ зачислен!`);
+            loadProfile();
+            updateBalanceUI();
         }
     };
-    document.getElementById('copyRefBtn').onclick = () => {
-        const inp = document.getElementById('refLink');
-        inp.select();
-        document.execCommand('copy');
-        alert('Ссылка скопирована');
-    };
-    loadBalance();
+
+    loadProfile();
 </script>
+
+<style>
+    .profile-container {
+        background: rgba(10,12,21,0.7);
+        backdrop-filter: blur(12px);
+        border-radius: 48px;
+        padding: 32px;
+        border: 1px solid rgba(245,176,66,0.25);
+    }
+    .profile-stats {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+        margin-bottom: 40px;
+    }
+    .stat-card {
+        background: #1e2130;
+        border-radius: 60px;
+        padding: 12px 28px;
+        font-size: 1.1rem;
+    }
+    .stat-card i {
+        color: #f5b042;
+        margin-right: 10px;
+    }
+    .withdraw-section, .referral-section, .bonus-section {
+        margin-bottom: 40px;
+        padding: 20px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 40px;
+    }
+    .min-withdraw {
+        font-size: 0.85rem;
+        color: #ffaa33;
+        margin-bottom: 15px;
+    }
+    .input-group {
+        display: flex;
+        align-items: center;
+        background: #1e2130;
+        border-radius: 60px;
+        margin-bottom: 15px;
+        padding: 4px 20px;
+        border: 1px solid #2f3448;
+    }
+    .input-group i {
+        color: #f5b042;
+        margin-right: 12px;
+    }
+    .input-group input, .input-group select {
+        background: transparent;
+        border: none;
+        padding: 12px 0;
+        color: white;
+        width: 100%;
+        outline: none;
+    }
+    .referral-link-box {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .referral-link-box input {
+        flex: 1;
+        background: #1e2130;
+        border: 1px solid #f5b042;
+        border-radius: 60px;
+        padding: 12px 20px;
+        color: white;
+    }
+    .referral-link-box button {
+        background: #f5b042;
+        border: none;
+        border-radius: 60px;
+        padding: 0 20px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+</style>
 {% endblock %}
