@@ -4,51 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>CashX – Играй и выигрывай</title>
-    <!-- Font Awesome 6 (иконки) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="shortcut icon" href="/static/favicon.ico">
 </head>
 <body>
-    <!-- ... внутри <body> ... -->
-<div class="app">
-    <!-- боковое меню (sidebar) можно оставить, но для неавторизованных его можно скрыть, но не обязательно -->
-    <aside class="sidebar" id="sidebar">...</aside>
-
-    <main class="main">
-        <div class="top-bar">...</div>
-
-        <!-- Блок авторизации (показывается, если пользователь не залогинен) -->
-        <div id="authPage" class="page auth-page">
-            <div class="auth-container">
-                <div class="auth-tabs">
-                    <button class="auth-tab active" data-tab="login">Вход</button>
-                    <button class="auth-tab" data-tab="register">Регистрация</button>
-                </div>
-                <div id="loginPanel" class="auth-panel active">
-                    <input type="text" id="loginUsername" placeholder="Логин">
-                    <input type="password" id="loginPassword" placeholder="Пароль">
-                    <button id="doLoginBtn" class="btn-primary">Войти</button>
-                </div>
-                <div id="registerPanel" class="auth-panel">
-                    <input type="text" id="regUsername" placeholder="Логин">
-                    <input type="password" id="regPassword" placeholder="Пароль">
-                    <input type="text" id="regRef" placeholder="Реферальный код (если есть)">
-                    <button id="doRegBtn" class="btn-primary">Зарегистрироваться</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Блок с играми и контентом (показывается только после логина) -->
-        <div id="gameArea" class="page" style="display: none;">
-            {% block content %}{% endblock %}
-        </div>
-    </main>
-</div>
     <div class="app">
-        <!-- Мобильное меню (выдвижное) -->
+        <!-- mobile toggle -->
         <div class="mobile-menu-toggle" id="mobileMenuToggle">
             <i class="fas fa-bars"></i>
         </div>
@@ -95,11 +58,11 @@
         </main>
     </div>
 
-    <!-- Уведомления -->
     <div id="toast" class="toast"></div>
 
     <script src="/static/script.js"></script>
     <script src="/static/chat.js"></script>
+    <script src="/static/animations.js"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
