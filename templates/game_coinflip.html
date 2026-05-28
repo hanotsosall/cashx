@@ -1,14 +1,33 @@
+<!-- game_coinflip.html -->
 {% extends "layout.html" %}
 {% block content %}
 <div class="game-container">
-    <h2>🪙 Coin Flip – Орёл или решка</h2>
-    <div class="coin" id="coin">🪙</div>
-    <div class="game-controls">
-        <input type="number" id="coinBet" value="10">
-        <button id="coinHeads" class="game-action-btn">Орёл</button>
-        <button id="coinTails" class="game-action-btn">Решка</button>
+    <h2><i class="fas fa-coins"></i> Coin Flip – Орёл или решка</h2>
+    <div class="coin" id="coinDisplay">🪙</div>
+    <div class="controls">
+        <input type="number" id="coinBet" value="100">
+        <button id="coinHeads" class="btn-primary">Орёл</button>
+        <button id="coinTails" class="btn-primary">Решка</button>
     </div>
-    <div id="coinResult" class="result-area"></div>
+    <div id="coinResult"></div>
 </div>
-<script src="/static/coinflip.js"></script>
+<script>
+    async function flip(choice) {
+        const bet = parseInt(document.getElementById('coinBet').value);
+        if (isNaN(bet) || bet < 10) return alert('Ставка от 10₽');
+        const res = await fetch('/api/coinflip/flip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bet, choice })
+        });
+        const data = await res.json();
+        if (data.error) return alert(data.error);
+        document.getElementById('coinDisplay').innerHTML = data.result === 'heads' ? '🦅' : '🪙';
+        if (data.win > 0) document.getElementById('coinResult').innerHTML = `Выигрыш: ${data.win} ₽`;
+        else document.getElementById('coinResult').innerHTML = `Проигрыш`;
+        await updateBalanceUI();
+    }
+    document.getElementById('coinHeads').onclick = () => flip('heads');
+    document.getElementById('coinTails').onclick = () => flip('tails');
+</script>
 {% endblock %}
