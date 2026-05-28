@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="game-container">
+    <h2>🎫 Keno – Выбери номера</h2>
+    <div class="keno-board" id="kenoBoard"></div>
+    <div class="game-controls">
+        <input type="number" id="kenoBet" value="10">
+        <button id="kenoPlayBtn" class="game-action-btn">Играть</button>
+    </div>
+    <div id="kenoResult" class="result-area"></div>
+</div>
+<script src="/static/keno.js"></script>
+{% endblock %}
