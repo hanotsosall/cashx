@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="game-container">
+    <h2>🎲 Dice – Угадай число</h2>
+    <div class="dice-result" id="diceResult">🎲</div>
+    <div class="game-controls">
+        <input type="number" id="diceBet" value="10">
+        <select id="dicePrediction">
+            <option value="under">Меньше 50 (x1.98)</option>
+            <option value="over">Больше 50 (x1.98)</option>
+            <option value="number">Точное число (x50)</option>
+        </select>
+        <input type="number" id="diceTarget" placeholder="Цель (1-100)" style="display:none;">
+        <button id="diceRollBtn" class="game-action-btn">Бросить</button>
+    </div>
+</div>
+<script src="/static/dice.js"></script>
+{% endblock %}
