@@ -1,21 +1,256 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="hero">
-    <h1>Добро пожаловать в <span class="gold">CashX</span></h1>
-    <p>Мгновенные выплаты, честные игры, огромные бонусы</p>
+<style>
+    /* Дополнительные стили именно для главной страницы */
+    .hero-section {
+        position: relative;
+        text-align: center;
+        padding: 80px 20px;
+        margin-bottom: 40px;
+        background: radial-gradient(ellipse at 50% 0%, rgba(245,176,66,0.15), transparent 70%);
+        border-radius: 60px;
+        overflow: hidden;
+    }
+    .hero-title {
+        font-size: 4rem;
+        font-weight: 800;
+        font-family: 'Orbitron', monospace;
+        animation: fadeInUp 0.8s ease-out;
+    }
+    .hero-title .gold {
+        background: linear-gradient(135deg, #fff, #f5b042);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 20px rgba(245,176,66,0.5);
+    }
+    .hero-subtitle {
+        font-size: 1.2rem;
+        color: #a0a5c0;
+        margin: 20px 0;
+        animation: fadeInUp 0.8s ease-out 0.1s backwards;
+    }
+    .hero-buttons {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-top: 30px;
+        animation: fadeInUp 0.8s ease-out 0.2s backwards;
+    }
+    .btn-glow {
+        background: linear-gradient(95deg, #f5b042, #c47d2e);
+        border: none;
+        padding: 14px 32px;
+        border-radius: 60px;
+        font-weight: bold;
+        color: #0a0c15;
+        transition: 0.2s;
+        box-shadow: 0 0 15px rgba(245,176,66,0.3);
+    }
+    .btn-glow:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0 25px #f5b042;
+    }
+    .btn-outline-glow {
+        background: transparent;
+        border: 2px solid #f5b042;
+        color: #f5b042;
+        padding: 12px 30px;
+        border-radius: 60px;
+        transition: 0.2s;
+    }
+    .btn-outline-glow:hover {
+        background: rgba(245,176,66,0.1);
+        transform: translateY(-2px);
+    }
+    .features-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 30px;
+        margin: 60px 0;
+    }
+    .feature-card {
+        background: rgba(18, 20, 35, 0.7);
+        backdrop-filter: blur(8px);
+        padding: 25px 20px;
+        border-radius: 40px;
+        width: 220px;
+        text-align: center;
+        border: 1px solid rgba(245,176,66,0.3);
+        transition: 0.3s;
+    }
+    .feature-card:hover {
+        transform: translateY(-8px);
+        border-color: #f5b042;
+        box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+    }
+    .feature-card i {
+        font-size: 2.5rem;
+        color: #f5b042;
+        margin-bottom: 15px;
+    }
+    .feature-card h3 {
+        font-size: 1.2rem;
+        margin-bottom: 8px;
+    }
+    .feature-card p {
+        color: #a0a5c0;
+        font-size: 0.85rem;
+    }
+    .game-showcase {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 25px;
+        margin: 50px 0;
+    }
+    .game-showcase-item {
+        background: linear-gradient(145deg, #1e2130, #0f1120);
+        border-radius: 32px;
+        padding: 20px;
+        width: 160px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.2s;
+        border: 1px solid rgba(245,176,66,0.2);
+    }
+    .game-showcase-item:hover {
+        transform: scale(1.03);
+        border-color: #f5b042;
+        box-shadow: 0 0 20px rgba(245,176,66,0.4);
+    }
+    .game-showcase-item i {
+        font-size: 3rem;
+        color: #f5b042;
+        margin-bottom: 10px;
+    }
+    .game-showcase-item span {
+        font-weight: bold;
+        display: block;
+    }
+    .online-counter {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(0,0,0,0.5);
+        padding: 6px 16px;
+        border-radius: 60px;
+        font-size: 0.8rem;
+        margin-top: 20px;
+    }
+    .online-dot-big {
+        width: 10px;
+        height: 10px;
+        background: #2ecc71;
+        border-radius: 50%;
+        animation: pulse 1.2s infinite;
+    }
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+        0% { opacity: 0.4; transform: scale(1); }
+        100% { opacity: 1; transform: scale(1.2); }
+    }
+    @media (max-width: 768px) {
+        .hero-title { font-size: 2.2rem; }
+        .feature-card { width: 160px; padding: 20px 12px; }
+        .game-showcase-item { width: 130px; }
+    }
+</style>
+
+<div class="hero-section">
+    <h1 class="hero-title">Добро пожаловать в <span class="gold">CASH<span style="color:#fff;">X</span></span></h1>
+    <p class="hero-subtitle">Элитное казино с мгновенными выплатами, сотнями игр и уникальными бонусами</p>
     <div class="hero-buttons">
-        <a href="/games" class="btn btn-primary"><i class="fas fa-play"></i> Играть</a>
-        <a href="/profile" class="btn btn-outline"><i class="fas fa-gift"></i> Бонус</a>
+        <button class="btn-glow" onclick="location.href='/games'"><i class="fas fa-play"></i> Играть сейчас</button>
+        <button class="btn-outline-glow" onclick="location.href='/profile'"><i class="fas fa-gift"></i> Получить бонус</button>
+    </div>
+    <div class="online-counter">
+        <span class="online-dot-big"></span>
+        <span id="onlineCount">1,234</span> игроков онлайн
     </div>
 </div>
-<div class="features">
-    <div class="feature"><i class="fas fa-bolt"></i> Моментальные выводы</div>
-    <div class="feature"><i class="fas fa-chart-line"></i> Коэффициенты до x1000</div>
-    <div class="feature"><i class="fas fa-headset"></i> Круглосуточный чат</div>
+
+<div class="features-grid">
+    <div class="feature-card">
+        <i class="fas fa-bolt"></i>
+        <h3>Мгновенные выводы</h3>
+        <p>Вывод от 1000₽ за 5 минут</p>
+    </div>
+    <div class="feature-card">
+        <i class="fas fa-chart-line"></i>
+        <h3>Коэффициенты до x1000</h3>
+        <p>Краш, Mines, Слоты</p>
+    </div>
+    <div class="feature-card">
+        <i class="fas fa-headset"></i>
+        <h3>Круглосуточный чат</h3>
+        <p>Поддержка 24/7</p>
+    </div>
+    <div class="feature-card">
+        <i class="fas fa-shield-alt"></i>
+        <h3>Лицензионный RNG</h3>
+        <p>Честные игры</p>
+    </div>
 </div>
-<div class="game-previews">
-    <div class="game-card" onclick="location.href='/game/slots'"><i class="fas fa-roulette"></i><span>Слоты</span></div>
-    <div class="game-card" onclick="location.href='/game/crash'"><i class="fas fa-rocket"></i><span>Crash</span></div>
-    <div class="game-card" onclick="location.href='/game/mines'"><i class="fas fa-bomb"></i><span>Mines</span></div>
+
+<h2 style="text-align:center; margin: 40px 0 20px;"><i class="fas fa-dice-d6"></i> Популярные игры</h2>
+<div class="game-showcase">
+    <div class="game-showcase-item" onclick="location.href='/game/slots'">
+        <i class="fas fa-roulette"></i>
+        <span>Слоты</span>
+    </div>
+    <div class="game-showcase-item" onclick="location.href='/game/crash'">
+        <i class="fas fa-rocket"></i>
+        <span>Crash</span>
+    </div>
+    <div class="game-showcase-item" onclick="location.href='/game/mines'">
+        <i class="fas fa-bomb"></i>
+        <span>Mines</span>
+    </div>
+    <div class="game-showcase-item" onclick="location.href='/game/dice'">
+        <i class="fas fa-dice"></i>
+        <span>Dice</span>
+    </div>
+    <div class="game-showcase-item" onclick="location.href='/game/coinflip'">
+        <i class="fas fa-coins"></i>
+        <span>Coin Flip</span>
+    </div>
 </div>
+
+<div style="text-align: center; margin: 50px 0;">
+    <button class="btn-glow" onclick="location.href='/games'"><i class="fas fa-th-large"></i> Все игры →</button>
+</div>
+
+<script>
+    // Анимированный счётчик онлайн (симуляция)
+    let onlineElement = document.getElementById('onlineCount');
+    if (onlineElement) {
+        let online = 1234;
+        setInterval(() => {
+            let delta = Math.floor(Math.random() * 11) - 5;
+            online += delta;
+            if (online < 800) online = 1200;
+            onlineElement.innerText = online.toLocaleString();
+        }, 8000);
+    }
+    // Анимация появления элементов при скролле
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.feature-card, .game-showcase-item').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'all 0.5s ease-out';
+        observer.observe(el);
+    });
+</script>
 {% endblock %}
