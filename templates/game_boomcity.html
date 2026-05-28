@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="game-container">
+    <h2>💥 Boom City – Взрывной выигрыш</h2>
+    <div class="boom-city" id="boomCity">💣</div>
+    <div class="game-controls">
+        <input type="number" id="boomBet" value="10">
+        <button id="boomSpinBtn" class="game-action-btn">Взорвать</button>
+    </div>
+    <div id="boomResult" class="result-area"></div>
+</div>
+<script src="/static/boomcity.js"></script>
+{% endblock %}
