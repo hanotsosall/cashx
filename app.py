@@ -62,12 +62,6 @@ def index():
 def games():
     return render_template('games.html')
 
-@app.route('/game/<game_name>')
-def game_page(game_name):
-    if game_name in ['slots', 'mines', 'crash', 'dice', 'coinflip', 'keno', 'boomcity']:
-        return render_template(f'game_{game_name}.html')
-    return "Game not found", 404
-
 @app.route('/profile')
 @login_required_page
 def profile():
