@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="game-container">
-    <h2><i class="fas fa-roulette"></i> Slots – Классические слоты</h2>
+    <h2><i class="fas fa-roulette"></i> SLOTS MACHINE</h2>
     <div class="slot-machine">
         <canvas id="slotCanvas" width="800" height="480"></canvas>
         <div class="controls">
@@ -12,7 +12,7 @@
                 <button class="bet-btn" data-bet="500">500₽</button>
                 <input type="number" id="slotBet" value="100" step="10">
             </div>
-            <button id="spinBtn" class="btn-primary"><i class="fas fa-play"></i> Крутить</button>
+            <button id="spinBtn" class="btn-primary"><i class="fas fa-play"></i> SPIN</button>
         </div>
         <div id="slotResult" class="result-area"></div>
     </div>
@@ -22,6 +22,17 @@
     const ctx = canvas.getContext('2d');
     const REEL_W = 140, SYMB_H = 140, REELS = 5, ROWS = 3;
 
+    // Яркие иконки Font Awesome вместо эмодзи
+    const symbolMap = {
+        '🍒': '<i class="fas fa-cherries"></i>',
+        '🍋': '<i class="fas fa-lemon"></i>',
+        '🍊': '<i class="fas fa-orange"></i>',
+        '🍉': '<i class="fas fa-watermelon"></i>',
+        '💎': '<i class="fas fa-gem"></i>',
+        '7️⃣': '<span style="font-size:2rem;">7️⃣</span>',
+        '🐉': '<i class="fas fa-dragon"></i>'
+    };
+
     function drawReels(reels) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (let c = 0; c < REELS; c++) {
@@ -29,18 +40,32 @@
                 const sym = reels[c][r];
                 const x = 20 + c * (REEL_W + 8);
                 const y = 20 + r * SYMB_H;
-                ctx.fillStyle = '#1a1a2a';
-                ctx.fillRect(x, y, REEL_W - 6, SYMB_H - 8);
+                // Градиентный фон
+                const grad = ctx.createLinearGradient(x, y, x+REEL_W-6, y+SYMB_H-8);
+                grad.addColorStop(0, '#1e2130');
+                grad.addColorStop(1, '#0f1120');
+                ctx.fillStyle = grad;
+                ctx.fillRect(x, y, REEL_W-6, SYMB_H-8);
                 ctx.fillStyle = sym.color || '#ffdd99';
                 ctx.font = '48px "Font Awesome 6 Free", "Segoe UI Emoji"';
-                ctx.fillText(sym.icon || sym, x + 40, y + 90);
+                ctx.shadowBlur = 0;
+                // Отрисовка иконки (символ)
+                if (sym.icon && sym.icon.includes('fa')) {
+                    // Упрощённо, используем текст эмодзи
+                    ctx.fillText(sym.raw || sym.icon, x + 40, y + 90);
+                } else {
+                    ctx.fillText(sym.raw || sym, x + 40, y + 90);
+                }
+                // Эффект блеска
+                ctx.fillStyle = 'rgba(255,215,0,0.2)';
+                ctx.fillRect(x+5, y+5, REEL_W-16, SYMB_H-18);
             }
         }
     }
 
     async function spin() {
         const bet = parseInt(document.getElementById('slotBet').value);
-        if (isNaN(bet) || bet < 10) return alert('Ставка от 10₽');
+        if (isNaN(bet) || bet < 10) return showToast('Ставка от 10₽', true);
         const spinBtn = document.getElementById('spinBtn');
         spinBtn.disabled = true;
         try {
@@ -51,22 +76,25 @@
             });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
-            // Анимация
-            for (let i = 0; i < 10; i++) {
-                const fakeReels = Array(REELS).fill().map(() => Array(ROWS).fill({ icon: '💎', color: '#555' }));
+            // Анимация прокрутки
+            for (let i = 0; i < 12; i++) {
+                const fakeReels = Array(REELS).fill().map(() => Array(ROWS).fill({ raw: '💎', icon: '💎', color: '#555' }));
                 drawReels(fakeReels);
                 await new Promise(r => setTimeout(r, 50));
             }
             drawReels(data.reels);
             if (data.win > 0) {
-                document.getElementById('slotResult').innerHTML = `🎉 Выигрыш: ${data.win} ₽ 🎉`;
+                document.getElementById('slotResult').innerHTML = `🎉 ВЫИГРЫШ: ${data.win} ₽ 🎉`;
+                if (window.createConfetti) window.createConfetti();
+                if (window.flashScreen) window.flashScreen('#2ecc71');
                 await updateBalanceUI();
             } else {
-                document.getElementById('slotResult').innerHTML = `😭 Проигрыш...`;
+                document.getElementById('slotResult').innerHTML = `😭 ПРОИГРЫШ...`;
+                if (window.shakeElement) window.shakeElement(document.getElementById('slotCanvas'));
             }
             await updateBalanceUI();
         } catch (err) {
-            alert(err.message);
+            showToast(err.message, true);
         } finally {
             spinBtn.disabled = false;
         }
