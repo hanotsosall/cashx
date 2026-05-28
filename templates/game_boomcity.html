@@ -1,13 +1,30 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="game-container">
-    <h2>💥 Boom City – Взрывной выигрыш</h2>
-    <div class="boom-city" id="boomCity">💣</div>
-    <div class="game-controls">
-        <input type="number" id="boomBet" value="10">
-        <button id="boomSpinBtn" class="game-action-btn">Взорвать</button>
+    <h2><i class="fas fa-city"></i> BOOM CITY – Взрывной выигрыш</h2>
+    <div class="boom-city" id="boomCity">💣🏢💥</div>
+    <div class="controls">
+        <input type="number" id="boomBet" value="100" step="50">
+        <button id="boomSpinBtn" class="btn-primary">Взорвать</button>
     </div>
-    <div id="boomResult" class="result-area"></div>
+    <div id="boomResult"></div>
 </div>
-<script src="/static/boomcity.js"></script>
+<script>
+    document.getElementById('boomSpinBtn').onclick = async () => {
+        const bet = parseInt(document.getElementById('boomBet').value);
+        if (isNaN(bet) || bet < 10) return showToast('Ставка от 10₽', true);
+        const res = await fetch('/api/boomcity/spin', {
+            method: 'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ bet })
+        });
+        const data = await res.json();
+        if (data.error) return showToast(data.error, true);
+        document.getElementById('boomResult').innerHTML = data.win > 0 ? `💣 ВЫИГРЫШ: ${data.win} ₽ 💥` : `😭 Ничего не выиграли`;
+        if (data.win > 0 && window.createConfetti) window.createConfetti();
+        await updateBalanceUI();
+    };
+</script>
+<style>
+    .boom-city { font-size: 3rem; text-align: center; margin: 30px; }
+</style>
 {% endblock %}
