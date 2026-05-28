@@ -285,6 +285,17 @@ def admin_set_balance():
         return jsonify({'ok': True})
     return jsonify({'error': 'User not found'}), 404
 
+# Удаление пользователя (только для админа)
+@app.route('/api/admin/user/<int:user_id>', methods=['DELETE'])
+@admin_required
+def admin_delete_user(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'ok': True})
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
