@@ -144,4 +144,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Чат и прочее – см. chat.js и animations.js
+// Глобальный перехват fetch ошибок
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+    return originalFetch(...args).then(response => {
+        if (response.status === 401) {
+            showToast('Сессия истекла, войдите снова', true);
+            localStorage.removeItem('cashx_user');
+            window.location.href = '/';
+        }
+        return response;
+    });
+};
