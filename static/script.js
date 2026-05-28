@@ -1,78 +1,45 @@
-// ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
 let currentUser = null;
 
-// Элементы
 const balanceSpan = document.getElementById('balanceAmount');
 const usernameSpan = document.getElementById('usernameDisplay');
 const logoutBtn = document.getElementById('logoutBtn');
 const toastEl = document.getElementById('toast');
 
-// Функция показа уведомления
-function showToast(message, isError = false) {
+function showToast(msg, isError = false) {
     if (!toastEl) return;
-    toastEl.innerText = message;
+    toastEl.innerText = msg;
     toastEl.className = 'toast show' + (isError ? ' error' : '');
     setTimeout(() => toastEl.classList.remove('show'), 3000);
 }
 
-// Обновление баланса с анимацией
-let lastBalance = 0;
 async function updateBalanceUI() {
     if (!currentUser) return;
     try {
         const res = await fetch('/api/balance');
-        const data = await res.json();
-        if (balanceSpan && data.balance !== undefined) {
-            if (data.balance > lastBalance) {
-                // Вспышка и конфетти при выигрыше
-                if (data.balance - lastBalance > 500) {
-                    if (window.createConfetti) window.createConfetti();
-                    if (window.flashScreen) window.flashScreen('#2ecc71');
-                }
-                // Анимация увеличения
-                balanceSpan.classList.add('pulse-gold');
-                setTimeout(() => balanceSpan.classList.remove('pulse-gold'), 500);
-            }
-            if (window.animateNumber) {
-                window.animateNumber(balanceSpan, lastBalance, data.balance, 300);
-            } else {
-                balanceSpan.innerText = data.balance.toFixed(0);
-            }
-            lastBalance = data.balance;
+        if (res.status === 401) {
+            // Сессия истекла – показываем вход
+            showAuthPage();
+            return;
         }
+        const data = await res.json();
+        if (balanceSpan) balanceSpan.innerText = data.balance.toFixed(0);
     } catch(e) {}
 }
 
-// При загрузке страницы проверяем, есть ли активная сессия
-async function checkAuth() {
-    try {
-        const res = await fetch('/api/user');
-        if (res.status === 200) {
-            const data = await res.json();
-            currentUser = data;
-            localStorage.setItem('cashx_user', JSON.stringify(currentUser));
-            document.getElementById('authPage').style.display = 'none';
-            document.getElementById('gameArea').style.display = 'block';
-            document.getElementById('usernameDisplay').innerText = currentUser.username;
-            document.getElementById('logoutBtn').style.display = 'inline-block';
-            updateBalanceUI();
-        } else {
-            document.getElementById('authPage').style.display = 'flex';  // или 'block'
-            document.getElementById('gameArea').style.display = 'none';
-        }
-    } catch(e) {
-        document.getElementById('authPage').style.display = 'flex';
-        document.getElementById('gameArea').style.display = 'none';
-    }
+function showAuthPage() {
+    document.getElementById('authPage')?.style.setProperty('display', 'flex');
+    document.getElementById('gameArea')?.style.setProperty('display', 'none');
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (usernameSpan) usernameSpan.innerText = 'Гость';
+    currentUser = null;
+    localStorage.removeItem('cashx_user');
 }
 
-// Вызвать после загрузки DOM
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuth();
-    // ... остальные обработчики (login, register) ...
-});
+function showGameArea() {
+    document.getElementById('authPage')?.style.setProperty('display', 'none');
+    document.getElementById('gameArea')?.style.setProperty('display', 'block');
+}
 
-// Авторизация
 async function login(username, password) {
     try {
         const res = await fetch('/api/login', {
@@ -86,17 +53,15 @@ async function login(username, password) {
         localStorage.setItem('cashx_user', JSON.stringify(currentUser));
         if (usernameSpan) usernameSpan.innerText = currentUser.username;
         if (logoutBtn) logoutBtn.style.display = 'inline-block';
-        document.getElementById('authPage')?.style.setProperty('display', 'none');
-        document.getElementById('gameArea')?.style.setProperty('display', 'block');
+        showGameArea();
         await updateBalanceUI();
-        showToast(`Привет, ${currentUser.username}!`);
+        showToast(`Добро пожаловать, ${currentUser.username}!`);
         loadReferralLink();
     } catch(err) {
         showToast(err.message, true);
     }
 }
 
-// Регистрация
 async function register(username, password, refCode) {
     try {
         const res = await fetch('/api/register', {
@@ -106,30 +71,42 @@ async function register(username, password, refCode) {
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
-        showToast('Регистрация успешна! Вход...');
+        showToast('Регистрация успешна! Выполняется вход...');
         login(username, password);
     } catch(err) {
         showToast(err.message, true);
     }
 }
 
-// Выход
 async function logout() {
     await fetch('/api/logout', { method: 'POST' });
     localStorage.removeItem('cashx_user');
-    currentUser = null;
-    if (usernameSpan) usernameSpan.innerText = 'Гость';
-    if (logoutBtn) logoutBtn.style.display = 'none';
-    document.getElementById('authPage')?.style.setProperty('display', 'block');
-    document.getElementById('gameArea')?.style.setProperty('display', 'none');
+    showAuthPage();
     showToast('Вы вышли');
 }
 
-// Вызвать при загрузке
-document.addEventListener('DOMContentLoaded', checkAuth);
+async function checkAuth() {
+    try {
+        const res = await fetch('/api/user');
+        if (res.status === 200) {
+            const data = await res.json();
+            currentUser = data;
+            localStorage.setItem('cashx_user', JSON.stringify(currentUser));
+            if (usernameSpan) usernameSpan.innerText = currentUser.username;
+            if (logoutBtn) logoutBtn.style.display = 'inline-block';
+            showGameArea();
+            updateBalanceUI();
+            loadReferralLink();
+        } else {
+            showAuthPage();
+        }
+    } catch(e) {
+        showAuthPage();
+    }
+}
 
-// Реферальная ссылка
 async function loadReferralLink() {
+    if (!currentUser) return;
     try {
         const res = await fetch('/api/referral/link');
         const data = await res.json();
@@ -138,53 +115,52 @@ async function loadReferralLink() {
     } catch(e) {}
 }
 
-// Инициализация обработчиков
+// ---------- Обработчики при загрузке страницы ----------
 document.addEventListener('DOMContentLoaded', () => {
+    // Формы авторизации
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
     if (loginForm) {
         loginForm.onsubmit = (e) => {
             e.preventDefault();
-            login(
-                document.getElementById('loginUsername').value,
-                document.getElementById('loginPassword').value
-            );
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            login(username, password);
         };
     }
     if (registerForm) {
         registerForm.onsubmit = (e) => {
             e.preventDefault();
-            register(
-                document.getElementById('regUsername').value,
-                document.getElementById('regPassword').value,
-                document.getElementById('regRef').value
-            );
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+            const ref = document.getElementById('regRef').value;
+            register(username, password, ref);
         };
     }
     if (logoutBtn) logoutBtn.onclick = logout;
-    // Восстановление сессии
-    const saved = localStorage.getItem('cashx_user');
-    if (saved) {
-        try {
-            const user = JSON.parse(saved);
-            login(user.username, user.password); // упрощённо, в реальном проекте токен
-        } catch(e) {}
-    }
-    // Периодическое обновление баланса
-    if (currentUser) {
-        setInterval(updateBalanceUI, 5000);
-    }
-});
+    // Проверка существующей сессии
+    checkAuth();
 
-// Глобальный перехват fetch ошибок
-const originalFetch = window.fetch;
-window.fetch = function(...args) {
-    return originalFetch(...args).then(response => {
-        if (response.status === 401) {
-            showToast('Сессия истекла, войдите снова', true);
-            localStorage.removeItem('cashx_user');
-            window.location.href = '/';
-        }
-        return response;
-    });
-};
+    // Мобильное меню
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    const sidebar = document.getElementById('sidebar');
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            menuToggle.innerHTML = sidebar.classList.contains('open') ? '✕' : '☰';
+        });
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('open');
+                    menuToggle.innerHTML = '☰';
+                }
+            });
+        });
+    }
+
+    // Обновление баланса каждые 5 секунд
+    setInterval(() => {
+        if (currentUser) updateBalanceUI();
+    }, 5000);
+});
