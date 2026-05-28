@@ -96,6 +96,31 @@ async function logout() {
     showToast('Вы вышли');
 }
 
+// При загрузке страницы проверить, есть ли активная сессия
+async function checkAuth() {
+    try {
+        const res = await fetch('/api/user');
+        if (res.status === 200) {
+            const data = await res.json();
+            currentUser = data;
+            localStorage.setItem('cashx_user', JSON.stringify(currentUser));
+            document.getElementById('authPage').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            document.getElementById('usernameDisplay').innerText = currentUser.username;
+            document.getElementById('logoutBtn').style.display = 'inline-block';
+            updateBalanceUI();
+        } else {
+            document.getElementById('authPage').style.display = 'block';
+            document.getElementById('gameArea').style.display = 'none';
+        }
+    } catch(e) {
+        document.getElementById('authPage').style.display = 'block';
+        document.getElementById('gameArea').style.display = 'none';
+    }
+}
+// Вызвать при загрузке
+document.addEventListener('DOMContentLoaded', checkAuth);
+
 // Реферальная ссылка
 async function loadReferralLink() {
     try {
