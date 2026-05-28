@@ -10,6 +10,7 @@ from config import Config
 from models import db, User, Transaction, WithdrawRequest, GameSession, ChatMessage
 from games import slots, mines, crash, dice, coinflip, keno, boomcity
 from payments import crypto, fiat
+from flask import redirect, url_for
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -23,6 +24,15 @@ with app.app_context():
         admin = User(username='admin', password=hashed, is_admin=True, balance=1000000)
         db.session.add(admin)
         db.session.commit()
+
+def login_required_page(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('index'))  # редирект на главную (где форма входа)
+        return f(*args, **kwargs)
+    return decorated
+
 
 def login_required(f):
     @wraps(f)
@@ -59,14 +69,26 @@ def game_page(game_name):
     return "Game not found", 404
 
 @app.route('/profile')
-@login_required
+@login_required_page
 def profile():
     return render_template('profile.html')
 
 @app.route('/admin')
-@admin_required
+@login_required_page
 def admin_panel():
     return render_template('admin.html')
+
+@app.route('/game/<game_name>')
+@login_required_page
+def game_page(game_name):
+    if game_name in ['slots', 'mines', 'crash', 'dice', 'coinflip', 'keno', 'boomcity']:
+        return render_template(f'game_{game_name}.html')
+    return "Game not found", 404
+
+@app.route('/games')
+@login_required_page
+def games():
+    return render_template('games.html')
 
 # ---------- API Авторизации ----------
 @app.route('/api/register', methods=['POST'])
