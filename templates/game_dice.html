@@ -1,18 +1,45 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="game-container">
-    <h2>🎲 Dice – Угадай число</h2>
+    <h2><i class="fas fa-dice"></i> Dice – Угадай число</h2>
     <div class="dice-result" id="diceResult">🎲</div>
-    <div class="game-controls">
-        <input type="number" id="diceBet" value="10">
+    <div class="controls">
+        <input type="number" id="diceBet" value="100" step="10">
         <select id="dicePrediction">
             <option value="under">Меньше 50 (x1.98)</option>
             <option value="over">Больше 50 (x1.98)</option>
             <option value="number">Точное число (x50)</option>
         </select>
-        <input type="number" id="diceTarget" placeholder="Цель (1-100)" style="display:none;">
-        <button id="diceRollBtn" class="game-action-btn">Бросить</button>
+        <input type="number" id="diceTarget" placeholder="Число 1-100" style="display:none;">
+        <button id="diceRollBtn" class="btn-primary">Бросить</button>
     </div>
+    <div id="diceMessage"></div>
 </div>
-<script src="/static/dice.js"></script>
+<script>
+    const predSelect = document.getElementById('dicePrediction');
+    const targetInput = document.getElementById('diceTarget');
+    predSelect.onchange = () => {
+        targetInput.style.display = predSelect.value === 'number' ? 'inline-block' : 'none';
+    };
+    document.getElementById('diceRollBtn').onclick = async () => {
+        const bet = parseInt(document.getElementById('diceBet').value);
+        const prediction = predSelect.value;
+        const target = prediction === 'number' ? parseInt(targetInput.value) : 50;
+        if (isNaN(bet) || bet < 10) return alert('Ставка от 10₽');
+        const res = await fetch('/api/dice/roll', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bet, prediction, target })
+        });
+        const data = await res.json();
+        if (data.error) return alert(data.error);
+        document.getElementById('diceResult').innerHTML = `🎲 Выпало: ${data.roll}`;
+        if (data.win > 0) {
+            document.getElementById('diceMessage').innerHTML = `Выигрыш: ${data.win} ₽`;
+        } else {
+            document.getElementById('diceMessage').innerHTML = `Проигрыш`;
+        }
+        await updateBalanceUI();
+    };
+</script>
 {% endblock %}
