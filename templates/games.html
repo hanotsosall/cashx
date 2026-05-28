@@ -1,13 +1,100 @@
 {% extends "layout.html" %}
 {% block content %}
-<h2 class="page-title"><i class="fas fa-gamepad"></i> Все игры CashX</h2>
-<div class="games-grid">
-    <div class="game-card" onclick="location.href='/game/slots'"><i class="fas fa-roulette"></i><h3>Слоты</h3><p>Классические слоты</p></div>
-    <div class="game-card" onclick="location.href='/game/mines'"><i class="fas fa-bomb"></i><h3>Mines</h3><p>Не подорвись</p></div>
-    <div class="game-card" onclick="location.href='/game/crash'"><i class="fas fa-rocket"></i><h3>Crash</h3><p>Успей забрать</p></div>
-    <div class="game-card" onclick="location.href='/game/dice'"><i class="fas fa-dice"></i><h3>Dice</h3><p>Угадай число</p></div>
-    <div class="game-card" onclick="location.href='/game/coinflip'"><i class="fas fa-coins"></i><h3>Coin Flip</h3><p>Орёл/решка</p></div>
-    <div class="game-card" onclick="location.href='/game/keno'"><i class="fas fa-bingo"></i><h3>Keno</h3><p>Лотерея</p></div>
-    <div class="game-card" onclick="location.href='/game/boomcity'"><i class="fas fa-city"></i><h3>Boom City</h3><p>Взрывные выигрыши</p></div>
+<div class="games-header">
+    <h1><i class="fas fa-gamepad"></i> Все игры CashX</h1>
+    <p>Выберите игру и начните выигрывать реальные деньги</p>
 </div>
+
+<div class="games-catalog">
+    <div class="game-card" onclick="location.href='/game/slots'">
+        <i class="fas fa-roulette"></i>
+        <h3>Слоты</h3>
+        <p>Классические 5-барабанные слоты с бонусными играми</p>
+    </div>
+    <div class="game-card" onclick="location.href='/game/mines'">
+        <i class="fas fa-bomb"></i>
+        <h3>Mines</h3>
+        <p>Открывайте клетки, избегая мин, и увеличивайте множитель</p>
+    </div>
+    <div class="game-card" onclick="location.href='/game/crash'">
+        <i class="fas fa-rocket"></i>
+        <h3>Crash</h3>
+        <p>Заберите выигрыш до того, как ракета взорвётся</p>
+    </div>
+    <div class="game-card" onclick="location.href='/game/dice'">
+        <i class="fas fa-dice"></i>
+        <h3>Dice</h3>
+        <p>Угадайте выпавшее число и получите до x50</p>
+    </div>
+    <div class="game-card" onclick="location.href='/game/coinflip'">
+        <i class="fas fa-coins"></i>
+        <h3>Coin Flip</h3>
+        <p>Орёл или решка – удвойте ставку за секунду</p>
+    </div>
+    <div class="game-card" onclick="location.href='/game/keno'">
+        <i class="fas fa-bingo"></i>
+        <h3>Keno</h3>
+        <p>Выберите номера и выигрывайте по результатам розыгрыша</p>
+    </div>
+    <div class="game-card" onclick="location.href='/game/boomcity'">
+        <i class="fas fa-city"></i>
+        <h3>Boom City</h3>
+        <p>Взрывные множители и моментальные выигрыши</p>
+    </div>
+</div>
+
+<style>
+    .games-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+    .games-header h1 {
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, #fff, #f5b042);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    .games-header p {
+        color: #a0a5c0;
+        margin-top: 8px;
+    }
+    .games-catalog {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 28px;
+    }
+    .game-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(8px);
+        border-radius: 32px;
+        padding: 24px 20px;
+        width: 220px;
+        text-align: center;
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid rgba(245, 176, 66, 0.2);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+    .game-card:hover {
+        transform: translateY(-8px);
+        border-color: var(--gold);
+        box-shadow: 0 20px 30px rgba(0,0,0,0.4), 0 0 15px var(--gold-glow);
+    }
+    .game-card i {
+        font-size: 3rem;
+        color: var(--gold);
+        margin-bottom: 12px;
+    }
+    .game-card h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .game-card p {
+        font-size: 0.85rem;
+        color: #a0a5c0;
+    }
+</style>
 {% endblock %}
