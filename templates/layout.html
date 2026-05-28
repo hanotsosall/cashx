@@ -3,67 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>CashX - Элитное казино</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>CashX – Играй и выигрывай</title>
+    <!-- Font Awesome 6 (иконки) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
-    <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+    <link rel="shortcut icon" href="/static/favicon.ico">
 </head>
 <body>
-    <div class="golden-overlay"></div>
-    <div class="mobile-menu-toggle" id="mobileMenuToggle">☰</div>
-    <div class="app-wrapper">
-        <!-- Sidebar как в GoldenX -->
+    <div class="app">
+        <!-- Мобильное меню (выдвижное) -->
+        <div class="mobile-menu-toggle" id="mobileMenuToggle">
+            <i class="fas fa-bars"></i>
+        </div>
         <aside class="sidebar" id="sidebar">
             <div class="logo">
-                <span class="logo-icon">💰</span>
-                <span class="logo-text">CASH<span class="accent">X</span></span>
+                <i class="fas fa-coins"></i>
+                <span>Cash<span class="gold">X</span></span>
             </div>
-            <nav class="nav-menu">
-                <a href="/" class="nav-item"><span class="nav-icon">🏠</span>Главная</a>
-                <a href="/games" class="nav-item"><span class="nav-icon">🎰</span>Игры</a>
-                <a href="/game/slots" class="nav-item"><span class="nav-icon">🎰</span>Слоты</a>
-                <a href="/game/mines" class="nav-item"><span class="nav-icon">💣</span>Mines</a>
-                <a href="/game/crash" class="nav-item"><span class="nav-icon">💥</span>Crash</a>
-                <a href="/game/dice" class="nav-item"><span class="nav-icon">🎲</span>Dice</a>
-                <a href="/game/coinflip" class="nav-item"><span class="nav-icon">🪙</span>Coin Flip</a>
-                <a href="/game/keno" class="nav-item"><span class="nav-icon">🎫</span>Keno</a>
-                <a href="/game/boomcity" class="nav-item"><span class="nav-icon">💣</span>Boom City</a>
-                <a href="/profile" class="nav-item"><span class="nav-icon">👤</span>Профиль</a>
-                <a href="/admin" class="nav-item admin-only" style="display:none;"><span class="nav-icon">⚙️</span>Админка</a>
+            <nav class="nav">
+                <a href="/" class="nav-link"><i class="fas fa-home"></i> Главная</a>
+                <a href="/games" class="nav-link"><i class="fas fa-dice-d6"></i> Все игры</a>
+                <a href="/game/slots" class="nav-link"><i class="fas fa-roulette"></i> Слоты</a>
+                <a href="/game/mines" class="nav-link"><i class="fas fa-bomb"></i> Mines</a>
+                <a href="/game/crash" class="nav-link"><i class="fas fa-rocket"></i> Crash</a>
+                <a href="/game/dice" class="nav-link"><i class="fas fa-dice"></i> Dice</a>
+                <a href="/game/coinflip" class="nav-link"><i class="fas fa-coins"></i> Coin Flip</a>
+                <a href="/game/keno" class="nav-link"><i class="fas fa-bingo"></i> Keno</a>
+                <a href="/game/boomcity" class="nav-link"><i class="fas fa-city"></i> Boom City</a>
+                <a href="/profile" class="nav-link"><i class="fas fa-user"></i> Профиль</a>
+                {% if user_is_admin %}
+                <a href="/admin" class="nav-link"><i class="fas fa-shield-alt"></i> Админка</a>
+                {% endif %}
             </nav>
             <div class="sidebar-footer">
-                <div class="online-stats"><span class="online-dot"></span><span id="onlineCount">1,234</span> онлайн</div>
-                <div class="version">CashX v1.0 | GoldenX style</div>
+                <div class="online"><i class="fas fa-circle online-dot"></i> <span id="onlineCount">1,234</span> онлайн</div>
+                <div class="version">CashX v2.0 | Ultimate</div>
             </div>
         </aside>
 
-        <main class="main-content">
-            <header class="top-header">
-                <div class="balance-panel">
-                    <div class="balance-card">
-                        <span class="balance-label">💰 ОСНОВНОЙ</span>
-                        <span class="balance-value" id="mainBalance">0</span>
-                    </div>
-                    <div class="balance-card bonus">
-                        <span class="balance-label">🎁 БОНУСНЫЙ</span>
-                        <span class="balance-value" id="bonusBalance">0</span>
-                    </div>
+        <main class="main">
+            <div class="top-bar">
+                <div class="balance-widget">
+                    <i class="fas fa-wallet"></i>
+                    <span id="balanceAmount">0</span> ₽
                 </div>
-                <div class="user-actions">
+                <div class="user-area">
                     <span id="usernameDisplay" class="username">Гость</span>
-                    <button id="logoutBtn" class="logout-btn" style="display:none;">🚪</button>
+                    <button id="logoutBtn" class="logout-btn" style="display:none;"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
-            </header>
-
-            <!-- Блок для уведомлений -->
-            <div id="notificationArea" class="notification-area"></div>
-
-            <!-- Контент страницы -->
-            <div class="page-content">
+            </div>
+            <div class="content">
                 {% block content %}{% endblock %}
             </div>
         </main>
     </div>
+
+    <!-- Уведомления -->
+    <div id="toast" class="toast"></div>
 
     <script src="/static/script.js"></script>
     <script src="/static/chat.js"></script>
