@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="game-container">
-    <h2><i class="fas fa-rocket"></i> CRASH – КОСМИЧЕСКИЙ РЕЙС</h2>
+    <h2><i class="fas fa-rocket"></i> CRASH – Космический рейс</h2>
     <div class="crash-stage">
         <canvas id="crashCanvas" width="600" height="280"></canvas>
         <div class="multiplier-display">
@@ -9,7 +9,7 @@
         </div>
     </div>
     <div class="controls">
-        <input type="number" id="crashBet" placeholder="Ставка (₽)" value="100" step="100">
+        <input type="number" id="crashBet" placeholder="Ставка (₽)" value="100" step="50">
         <button id="crashStartBtn" class="btn-primary"><i class="fas fa-play"></i> СТАРТ</button>
         <button id="crashCashoutBtn" class="btn-success" disabled><i class="fas fa-hand-holding-usd"></i> ЗАБРАТЬ</button>
     </div>
@@ -18,18 +18,13 @@
 <script>
     const canvas = document.getElementById('crashCanvas');
     const ctx = canvas.getContext('2d');
-    let multiplier = 1.0;
-    let running = false;
-    let intervalId = null;
-    let currentBet = 0;
-    let currentSession = null;
+    let running = false, intervalId = null, currentSession = null, currentBet = 0;
     let history = [];
 
     function drawRocket(mult) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const x = 50 + (mult - 1) * 45;
+        const x = 50 + (mult - 1) * 50;
         if (x > canvas.width - 80) return;
-        // Ракета
         ctx.fillStyle = '#f5b042';
         ctx.beginPath();
         ctx.moveTo(x, canvas.height/2);
@@ -38,39 +33,33 @@
         ctx.fill();
         ctx.fillStyle = '#e67e22';
         ctx.fillRect(x+40, canvas.height/2 - 12, 20, 24);
-        // Пламя
         ctx.fillStyle = '#ff6600';
         ctx.beginPath();
         ctx.moveTo(x-15, canvas.height/2);
         ctx.lineTo(x, canvas.height/2 - 18);
         ctx.lineTo(x, canvas.height/2 + 18);
         ctx.fill();
-        // Тень
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = 'gold';
-        // Множитель
-        ctx.font = 'bold 26px Orbitron';
+        ctx.font = 'bold 24px Orbitron';
         ctx.fillStyle = 'white';
         ctx.fillText(mult.toFixed(2)+'x', x+70, canvas.height/2 - 10);
-        ctx.shadowBlur = 0;
     }
 
     async function startCrash() {
         const bet = parseInt(document.getElementById('crashBet').value);
         if (isNaN(bet) || bet < 10) return showToast('Ставка от 10₽', true);
         const res = await fetch('/api/crash/start', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ bet })
         });
         const data = await res.json();
         if (data.error) return showToast(data.error, true);
-        currentBet = bet;
         currentSession = data.session_id;
+        currentBet = bet;
         await updateBalanceUI();
         document.getElementById('crashStartBtn').disabled = true;
         document.getElementById('crashCashoutBtn').disabled = false;
         running = true;
-        multiplier = 1.0;
+        let multiplier = 1.0;
         drawRocket(1.0);
         intervalId = setInterval(async () => {
             if (!running) return;
@@ -80,16 +69,13 @@
             document.getElementById('crashMultiplier').innerText = multiplier.toFixed(2)+'x';
             drawRocket(multiplier);
             if (!status.running) {
-                // Крах!
                 clearInterval(intervalId);
                 running = false;
                 document.getElementById('crashStartBtn').disabled = false;
                 document.getElementById('crashCashoutBtn').disabled = true;
-                // Анимация взрыва
                 ctx.fillStyle = '#e74c3c';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillRect(0,0,canvas.width,canvas.height);
                 setTimeout(() => drawRocket(multiplier), 600);
-                if (window.flashScreen) window.flashScreen('#e74c3c');
                 showToast(`💥 КРАШ на x${multiplier.toFixed(2)}!`, true);
                 history.unshift(multiplier);
                 updateHistory();
@@ -102,13 +88,12 @@
         if (!running) return;
         clearInterval(intervalId);
         const res = await fetch('/api/crash/cashout', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ session_id: currentSession })
         });
         const data = await res.json();
         if (data.error) return showToast(data.error, true);
-        const winAmount = data.win;
-        showToast(`💰 Выигрыш: ${winAmount} ₽ (x${data.multiplier})`);
+        showToast(`💰 Выигрыш: ${data.win} ₽ (x${data.multiplier})`);
         if (window.createConfetti) window.createConfetti();
         await updateBalanceUI();
         running = false;
@@ -120,21 +105,13 @@
 
     function updateHistory() {
         const container = document.getElementById('crashHistory');
-        container.innerHTML = history.slice(0, 10).map(m => `<span class="crash-hist-item">${m.toFixed(2)}x</span>`).join('');
+        container.innerHTML = history.slice(0,10).map(m => `<span class="crash-hist-item">${m.toFixed(2)}x</span>`).join('');
     }
 
     document.getElementById('crashStartBtn').onclick = startCrash;
     document.getElementById('crashCashoutBtn').onclick = cashout;
 </script>
 <style>
-    .crash-hist-item {
-        display: inline-block;
-        background: #1e2130;
-        padding: 4px 12px;
-        margin: 4px;
-        border-radius: 30px;
-        font-family: monospace;
-        font-weight: bold;
-    }
+    .crash-hist-item { display: inline-block; background: #1e2130; padding: 4px 12px; margin: 4px; border-radius: 30px; font-family: monospace; }
 </style>
 {% endblock %}
