@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="game-container">
+    <h2>💥 Crash – Успей забрать</h2>
+    <div class="crash-display">
+        <span id="crashMultiplier" class="multiplier">1.00x</span>
+        <canvas id="crashCanvas" width="400" height="100"></canvas>
+    </div>
+    <div class="game-controls">
+        <input type="number" id="crashBet" placeholder="Ставка" value="10">
+        <button id="crashBetBtn" class="game-action-btn">Поставить</button>
+        <button id="crashCashoutBtn" class="game-action-btn" disabled>Забрать</button>
+    </div>
+    <div id="crashResult" class="result-area"></div>
+</div>
+<script src="/static/crash.js"></script>
+{% endblock %}
