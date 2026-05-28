@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="game-container">
-    <h2><i class="fas fa-bomb"></i> Mines – Не подорвись!</h2>
+    <h2><i class="fas fa-bomb"></i> MINES – НЕ ПОДОРВИСЬ</h2>
     <div class="mines-grid" id="minesGrid"></div>
     <div class="controls">
         <select id="minesCount">
@@ -10,8 +10,8 @@
             <option value="8">8 мин</option>
         </select>
         <input type="number" id="minesBet" placeholder="Ставка" value="100">
-        <button id="minesStartBtn" class="btn-primary">Новая игра</button>
-        <button id="minesCashoutBtn" class="btn-success" disabled>Забрать</button>
+        <button id="minesStartBtn" class="btn-primary">НОВАЯ ИГРА</button>
+        <button id="minesCashoutBtn" class="btn-success" disabled>ЗАБРАТЬ</button>
     </div>
     <div id="minesResult"></div>
 </div>
@@ -24,14 +24,14 @@
     async function startGame() {
         const mines = parseInt(document.getElementById('minesCount').value);
         const bet = parseInt(document.getElementById('minesBet').value);
-        if (isNaN(bet) || bet < 10) return alert('Ставка от 10₽');
+        if (isNaN(bet) || bet < 10) return showToast('Ставка от 10₽', true);
         const res = await fetch('/api/mines/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mines, bet })
         });
         const data = await res.json();
-        if (data.error) return alert(data.error);
+        if (data.error) return showToast(data.error, true);
         currentGrid = data.grid;
         currentBet = data.bet;
         currentRevealed = [];
@@ -40,6 +40,7 @@
         document.getElementById('minesStartBtn').disabled = true;
         document.getElementById('minesCashoutBtn').disabled = false;
         document.getElementById('minesResult').innerHTML = '';
+        await updateBalanceUI();
     }
 
     function renderGrid() {
@@ -74,6 +75,8 @@
         if (data.boom) {
             // Мина
             document.getElementById('minesResult').innerHTML = `💥 МИНА! Вы проиграли ${currentBet} ₽`;
+            if (window.flashScreen) window.flashScreen('#e74c3c');
+            if (window.shakeElement) window.shakeElement(document.getElementById('minesGrid'));
             document.getElementById('minesStartBtn').disabled = false;
             document.getElementById('minesCashoutBtn').disabled = true;
             currentGrid = null;
@@ -83,7 +86,8 @@
             currentRevealed.push([row, col]);
             currentMultiplier = data.multiplier;
             renderGrid();
-            document.getElementById('minesResult').innerHTML = `Безопасно! Множитель: ${currentMultiplier}x, возможный выигрыш: ${Math.floor(currentBet * currentMultiplier)} ₽`;
+            document.getElementById('minesResult').innerHTML = `✨ Безопасно! Множитель: ${currentMultiplier}x, возможный выигрыш: ${Math.floor(currentBet * currentMultiplier)} ₽`;
+            if (window.createConfetti) window.createConfetti(); // маленькая радость
         }
     }
 
@@ -96,8 +100,9 @@
             body: JSON.stringify({ game: 'mines', bet: currentBet, win: win })
         });
         const data = await res.json();
-        if (data.error) alert(data.error);
-        alert(`Вы выиграли ${win} ₽!`);
+        if (data.error) return showToast(data.error, true);
+        showToast(`🎉 Вы выиграли ${win} ₽!`);
+        if (window.createConfetti) window.createConfetti();
         document.getElementById('minesStartBtn').disabled = false;
         document.getElementById('minesCashoutBtn').disabled = true;
         currentGrid = null;
