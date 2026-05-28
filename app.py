@@ -1,14 +1,54 @@
 import os
 import bcrypt
 import secrets
-import json
 import random
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-from config import Config
-from models import db, User, Transaction, WithdrawRequest, GameSession, ChatMessage
+from flask import Flask, render_template, request, jsonify, session
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from typing import Optional
 
+# ---------- Конфигурация ----------
+class Config:
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'cashx_ultimate_secret_2025')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///cashx_ultimate.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    MIN_WITHDRAWAL = 1000
+
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+
+# ---------- Модели ----------
+class User(db.Model):
+    __tablename__ = 'users'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(nullable=False)
+    balance: Mapped[float] = mapped_column(default=0.0)
+    is_admin: Mapped[bool] = mapped_column(default=False)
+    referrer_id: Mapped[Optional[int]] = mapped_column(db.ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
+class Transaction(db.Model):
+    __tablename__ = 'transactions'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(db.ForeignKey('users.id'))
+    amount: Mapped[float]
+    type: Mapped[str]  # deposit, withdraw, bet, win
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
+class ChatMessage(db.Model):
+    __tablename__ = 'chat_messages'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(db.ForeignKey('users.id'))
+    username: Mapped[str]
+    message: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+
+# ---------- Приложение ----------
 app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
@@ -21,6 +61,7 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
 
+# ---------- Декораторы ----------
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -40,7 +81,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# ---------- Страницы ----------
+# ---------- Страницы (HTML) ----------
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -52,6 +93,14 @@ def games():
 @app.route('/login')
 def login_page():
     return render_template('login.html')
+
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
+
+@app.route('/admin')
+def admin_panel():
+    return render_template('admin.html')
 
 @app.route('/game/slots')
 def game_slots():
@@ -81,15 +130,7 @@ def game_keno():
 def game_boomcity():
     return render_template('game_boomcity.html')
 
-@app.route('/profile')
-def profile():
-    return render_template('profile.html')
-
-@app.route('/admin')
-def admin_panel():
-    return render_template('admin.html')
-
-# ---------- API ----------
+# ---------- API авторизации ----------
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.json
@@ -142,7 +183,7 @@ def get_balance():
     user = User.query.get(session['user_id'])
     return jsonify({'balance': user.balance})
 
-# ---------- Игровые API (реалистичные заглушки, можно доработать) ----------
+# ---------- API для игр (реалистичные) ----------
 @app.route('/api/slots/spin', methods=['POST'])
 @login_required
 def slots_spin():
@@ -151,12 +192,15 @@ def slots_spin():
     reels = [[random.choice(symbols) for _ in range(3)] for _ in range(5)]
     win = 0
     for row in range(3):
-        if reels[0][row] == reels[1][row] == reels[2][row] == reels[3][row] == reels[4][row]:
+        if all(reels[col][row] == reels[0][row] for col in range(1,5)):
             mult = {'🍒':2, '🍋':3, '🍊':4, '🍉':5, '💎':10, '7️⃣':20, '🐉':50}.get(reels[0][row], 1)
             win += bet * mult
     if all(reels[i][1] == '🐉' for i in range(5)):
         win += 5000
-    return jsonify({'reels': reels, 'win': win})
+    user = User.query.get(session['user_id'])
+    user.balance += win - bet
+    db.session.commit()
+    return jsonify({'reels': reels, 'win': win, 'balance': user.balance})
 
 @app.route('/api/mines/generate', methods=['POST'])
 @login_required
@@ -169,6 +213,8 @@ def mines_generate():
         r,c = random.choice(positions)
         grid[r][c] = 1
         positions.remove((r,c))
+    # Сохраняем состояние в сессию (для раскрытия)
+    session[f'mines_{session["user_id"]}'] = {'grid': grid, 'bet': bet, 'revealed': [], 'mines': mines}
     return jsonify({'grid': grid, 'bet': bet})
 
 @app.route('/api/mines/reveal', methods=['POST'])
@@ -176,40 +222,77 @@ def mines_generate():
 def mines_reveal():
     row = request.json.get('row')
     col = request.json.get('col')
-    # Для демо всегда безопасно
-    return jsonify({'boom': False, 'multiplier': 1.5})
+    game = session.get(f'mines_{session["user_id"]}')
+    if not game:
+        return jsonify({'error': 'No active game'}), 400
+    cell = game['grid'][row][col]
+    if cell == 1:
+        # Мина – игра окончена
+        session.pop(f'mines_{session["user_id"]}', None)
+        return jsonify({'boom': True, 'win': 0})
+    else:
+        game['revealed'].append((row,col))
+        multiplier = 1 + len(game['revealed']) * 0.2
+        session[f'mines_{session["user_id"]}'] = game
+        return jsonify({'boom': False, 'multiplier': round(multiplier,2)})
 
 @app.route('/api/crash/start', methods=['POST'])
 @login_required
 def crash_start():
     bet = request.json.get('bet', 10)
+    user = User.query.get(session['user_id'])
+    if user.balance < bet:
+        return jsonify({'error': 'Недостаточно средств'}), 400
+    user.balance -= bet
+    db.session.commit()
     session_id = secrets.token_urlsafe(16)
-    return jsonify({'session_id': session_id, 'balance': 1000})
+    # Для упрощения: в реальности краш-цикл управляется глобально, но здесь сделаем заглушку
+    session[f'crash_{session_id}'] = {'user_id': session['user_id'], 'bet': bet, 'cashed_out': False}
+    return jsonify({'session_id': session_id, 'balance': user.balance})
 
 @app.route('/api/crash/cashout', methods=['POST'])
 @login_required
 def crash_cashout():
-    return jsonify({'win': 200, 'multiplier': 2.0, 'balance': 1200})
+    session_id = request.json.get('session_id')
+    crash = session.get(f'crash_{session_id}')
+    if not crash or crash['cashed_out']:
+        return jsonify({'error': 'Invalid session'}), 400
+    multiplier = random.uniform(1.1, 5.0)
+    win = int(crash['bet'] * multiplier)
+    user = User.query.get(session['user_id'])
+    user.balance += win
+    db.session.commit()
+    crash['cashed_out'] = True
+    session[f'crash_{session_id}'] = crash
+    return jsonify({'win': win, 'multiplier': round(multiplier,2), 'balance': user.balance})
 
 @app.route('/api/crash/status', methods=['GET'])
 def crash_status():
-    return jsonify({'running': True, 'multiplier': round(random.uniform(1.0, 5.0), 2)})
+    # Для упрощения возвращаем растущий множитель
+    import time
+    fake_mult = 1.0 + (time.time() % 30) / 10
+    return jsonify({'running': True, 'multiplier': round(fake_mult,2)})
 
 @app.route('/api/dice/roll', methods=['POST'])
 @login_required
 def dice_roll():
     bet = request.json.get('bet', 10)
-    pred = request.json.get('prediction')
+    prediction = request.json.get('prediction')
     target = request.json.get('target', 50)
     roll = random.randint(1,100)
     win = 0
-    if pred == 'under' and roll < target:
+    if prediction == 'under' and roll < target:
         win = int(bet * 1.98)
-    elif pred == 'over' and roll > target:
+    elif prediction == 'over' and roll > target:
         win = int(bet * 1.98)
-    elif pred == 'number' and roll == target:
+    elif prediction == 'number' and roll == target:
         win = bet * 50
-    return jsonify({'roll': roll, 'win': win})
+    user = User.query.get(session['user_id'])
+    if user.balance < bet:
+        return jsonify({'error': 'Недостаточно средств'}), 400
+    user.balance = user.balance - bet + win
+    db.session.commit()
+    return jsonify({'roll': roll, 'win': win, 'balance': user.balance})
 
 @app.route('/api/coinflip/flip', methods=['POST'])
 @login_required
@@ -218,7 +301,12 @@ def coinflip_flip():
     choice = request.json.get('choice')
     result = random.choice(['heads', 'tails'])
     win = bet * 2 if choice == result else 0
-    return jsonify({'result': result, 'win': win})
+    user = User.query.get(session['user_id'])
+    if user.balance < bet:
+        return jsonify({'error': 'Недостаточно средств'}), 400
+    user.balance = user.balance - bet + win
+    db.session.commit()
+    return jsonify({'result': result, 'win': win, 'balance': user.balance})
 
 @app.route('/api/keno/draw', methods=['POST'])
 @login_required
@@ -228,29 +316,26 @@ def keno_draw():
     drawn = random.sample(range(1,81), 20)
     matches = len(set(picks) & set(drawn))
     win = matches * (bet // 10) * 2
-    return jsonify({'drawn': drawn, 'matches': matches, 'win': win})
+    user = User.query.get(session['user_id'])
+    if user.balance < bet:
+        return jsonify({'error': 'Недостаточно средств'}), 400
+    user.balance = user.balance - bet + win
+    db.session.commit()
+    return jsonify({'drawn': drawn, 'matches': matches, 'win': win, 'balance': user.balance})
 
 @app.route('/api/boomcity/spin', methods=['POST'])
 @login_required
 def boomcity_spin():
     bet = request.json.get('bet', 10)
-    win = random.choice([0, bet, bet*2, bet*5])
-    return jsonify({'win': win})
-
-@app.route('/api/place_bet', methods=['POST'])
-@login_required
-def place_bet():
-    data = request.json
-    bet = data.get('bet', 0)
-    win = data.get('win', 0)
+    win = random.choice([0, bet, bet*2, bet*5, bet*10])
     user = User.query.get(session['user_id'])
-    if bet > 0 and user.balance < bet:
+    if user.balance < bet:
         return jsonify({'error': 'Недостаточно средств'}), 400
     user.balance = user.balance - bet + win
     db.session.commit()
-    return jsonify({'balance': user.balance})
+    return jsonify({'win': win, 'balance': user.balance})
 
-# ---------- Бонусы, рефералы, чат, админка ----------
+# ---------- Дополнительные API (бонусы, рефералы, чат, админка) ----------
 @app.route('/api/bonus/apply', methods=['POST'])
 @login_required
 def apply_bonus():
