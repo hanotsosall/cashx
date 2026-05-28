@@ -1,23 +1,46 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="admin-container">
-    <h2><i class="fas fa-shield-alt"></i> Админ-панель CashX</h2>
+    <h1><i class="fas fa-shield-alt"></i> Админ-панель CashX</h1>
+    <p class="admin-desc">Управление пользователями, балансами и бонус-кодами</p>
+
     <div class="admin-section">
-        <h3>Пользователи</h3>
-        <table class="admin-table">
-            <thead>
-                <tr><th>ID</th><th>Логин</th><th>Баланс (₽)</th><th>Роль</th><th>Действие</th></tr>
-            </thead>
-            <tbody id="adminUsersTable"></tbody>
-        </table>
+        <h3><i class="fas fa-users"></i> Список пользователей</h3>
+        <div class="table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Логин</th>
+                        <th>Баланс (₽)</th>
+                        <th>Роль</th>
+                        <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody id="adminUsersTable"></tbody>
+            </table>
+        </div>
     </div>
+
     <div class="admin-section">
-        <h3>Выдать / изменить баланс</h3>
-        <input type="text" id="adminUsername" placeholder="Логин пользователя">
-        <input type="number" id="adminAmount" placeholder="Новый баланс (₽)">
-        <button id="adminSetBalanceBtn" class="btn-primary">Установить баланс</button>
+        <h3><i class="fas fa-coins"></i> Изменить баланс пользователя</h3>
+        <div class="admin-form">
+            <div class="input-group"><i class="fas fa-user"></i><input type="text" id="adminUsername" placeholder="Логин пользователя"></div>
+            <div class="input-group"><i class="fas fa-wallet"></i><input type="number" id="adminAmount" placeholder="Новый баланс (₽)"></div>
+            <button id="adminSetBalanceBtn" class="btn-primary"><i class="fas fa-save"></i> Установить баланс</button>
+        </div>
+    </div>
+
+    <div class="admin-section">
+        <h3><i class="fas fa-ticket-alt"></i> Генерация бонус-кода</h3>
+        <div class="admin-form">
+            <div class="input-group"><i class="fas fa-gift"></i><input type="number" id="bonusAmount" placeholder="Сумма бонуса (₽)"></div>
+            <button id="genBonusCodeBtn" class="btn-primary"><i class="fas fa-magic"></i> Сгенерировать код</button>
+        </div>
+        <div id="generatedCode" class="generated-code" style="display:none;"></div>
     </div>
 </div>
+
 <script>
     async function loadUsers() {
         const res = await fetch('/api/admin/users');
@@ -27,49 +50,153 @@
         users.forEach(u => {
             const row = tbody.insertRow();
             row.insertCell().innerText = u.id;
-            row.insertCell().innerText = u.username;
-            row.insertCell().innerText = u.balance;
-            row.insertCell().innerText = u.is_admin ? 'Админ' : 'Игрок';
+            row.insertCell().innerHTML = `<i class="fas fa-user-circle"></i> ${u.username}`;
+            row.insertCell().innerHTML = `<span class="balance-cell">${u.balance} ₽</span>`;
+            row.insertCell().innerHTML = u.is_admin ? '<span class="admin-badge">Админ</span>' : '<span class="user-badge">Игрок</span>';
             const actionCell = row.insertCell();
-            const delBtn = document.createElement('button');
-            delBtn.innerText = '✖';
-            delBtn.style.background = '#e74c3c';
-            delBtn.style.border = 'none';
-            delBtn.style.borderRadius = '30px';
-            delBtn.style.padding = '4px 10px';
-            delBtn.style.cursor = 'pointer';
-            delBtn.onclick = () => deleteUser(u.id);
-            actionCell.appendChild(delBtn);
+            const editBtn = document.createElement('button');
+            editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+            editBtn.className = 'action-btn';
+            editBtn.onclick = () => {
+                document.getElementById('adminUsername').value = u.username;
+                document.getElementById('adminAmount').value = u.balance;
+            };
+            actionCell.appendChild(editBtn);
         });
     }
-    async function deleteUser(userId) {
-        if (confirm('Удалить пользователя?')) {
-            await fetch(`/api/admin/user/${userId}`, { method: 'DELETE' });
-            loadUsers();
-        }
-    }
+
     document.getElementById('adminSetBalanceBtn').onclick = async () => {
-        const username = document.getElementById('adminUsername').value;
+        const username = document.getElementById('adminUsername').value.trim();
         const balance = parseFloat(document.getElementById('adminAmount').value);
-        if (!username || isNaN(balance)) return alert('Заполните поля');
+        if(!username || isNaN(balance)) return showToast('Заполните все поля', true);
         const res = await fetch('/api/admin/user_balance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, balance })
         });
         const data = await res.json();
-        if (data.error) alert(data.error);
+        if(data.error) showToast(data.error, true);
         else {
-            alert('Баланс обновлён');
+            showToast(`Баланс пользователя ${username} изменён на ${balance} ₽`);
             loadUsers();
         }
     };
+
+    document.getElementById('genBonusCodeBtn').onclick = async () => {
+        const amount = parseInt(document.getElementById('bonusAmount').value);
+        if(isNaN(amount) || amount <= 0) return showToast('Введите сумму бонуса', true);
+        const res = await fetch('/api/admin/generate_code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount })
+        });
+        const data = await res.json();
+        if(data.error) showToast(data.error, true);
+        else {
+            const codeDiv = document.getElementById('generatedCode');
+            codeDiv.innerHTML = `<i class="fas fa-ticket-alt"></i> Новый код: <strong>${data.code}</strong> на сумму ${amount} ₽<br><small>Действителен 7 дней</small>`;
+            codeDiv.style.display = 'block';
+            setTimeout(() => codeDiv.style.display = 'none', 10000);
+            showToast(`Код ${data.code} создан`);
+        }
+    };
+
     loadUsers();
 </script>
+
 <style>
-    .admin-section { margin: 30px 0; padding: 20px; background: rgba(0,0,0,0.5); border-radius: 30px; }
-    .admin-table { width: 100%; border-collapse: collapse; }
-    .admin-table th, .admin-table td { padding: 8px; text-align: left; border-bottom: 1px solid #333; }
-    .admin-table th { background: #ffaa33; color: black; }
+    .admin-container {
+        background: rgba(10,12,21,0.7);
+        backdrop-filter: blur(12px);
+        border-radius: 48px;
+        padding: 32px;
+    }
+    .admin-desc {
+        color: #a0a5c0;
+        margin-bottom: 30px;
+    }
+    .admin-section {
+        background: rgba(0,0,0,0.3);
+        border-radius: 40px;
+        padding: 24px;
+        margin-bottom: 32px;
+    }
+    .admin-section h3 {
+        margin-bottom: 20px;
+        font-size: 1.4rem;
+    }
+    .table-wrapper {
+        overflow-x: auto;
+    }
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .admin-table th, .admin-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #2f3448;
+    }
+    .admin-table th {
+        background: #f5b042;
+        color: #0a0c15;
+        font-weight: bold;
+    }
+    .admin-badge {
+        background: #e74c3c;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    .user-badge {
+        background: #2ecc71;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    .balance-cell {
+        font-family: 'Orbitron', monospace;
+        font-weight: bold;
+        color: #f5b042;
+    }
+    .action-btn {
+        background: none;
+        border: none;
+        color: #f5b042;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .action-btn:hover {
+        transform: scale(1.1);
+    }
+    .admin-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: flex-end;
+    }
+    .admin-form .input-group {
+        flex: 1;
+        min-width: 180px;
+        margin-bottom: 0;
+    }
+    .generated-code {
+        margin-top: 20px;
+        background: #1e2130;
+        border-radius: 40px;
+        padding: 12px 20px;
+        text-align: center;
+        border: 1px solid #f5b042;
+        font-size: 1rem;
+    }
+    @media (max-width: 768px) {
+        .admin-form {
+            flex-direction: column;
+        }
+        .admin-form .input-group {
+            width: 100%;
+        }
+    }
 </style>
 {% endblock %}
