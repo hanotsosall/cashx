@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>CashX - Элитное казино</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+</head>
+<body>
+    <div class="golden-overlay"></div>
+    <div class="mobile-menu-toggle" id="mobileMenuToggle">☰</div>
+    <div class="app-wrapper">
+        <!-- Sidebar как в GoldenX -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo">
+                <span class="logo-icon">💰</span>
+                <span class="logo-text">CASH<span class="accent">X</span></span>
+            </div>
+            <nav class="nav-menu">
+                <a href="/" class="nav-item"><span class="nav-icon">🏠</span>Главная</a>
+                <a href="/games" class="nav-item"><span class="nav-icon">🎰</span>Игры</a>
+                <a href="/game/slots" class="nav-item"><span class="nav-icon">🎰</span>Слоты</a>
+                <a href="/game/mines" class="nav-item"><span class="nav-icon">💣</span>Mines</a>
+                <a href="/game/crash" class="nav-item"><span class="nav-icon">💥</span>Crash</a>
+                <a href="/game/dice" class="nav-item"><span class="nav-icon">🎲</span>Dice</a>
+                <a href="/game/coinflip" class="nav-item"><span class="nav-icon">🪙</span>Coin Flip</a>
+                <a href="/game/keno" class="nav-item"><span class="nav-icon">🎫</span>Keno</a>
+                <a href="/game/boomcity" class="nav-item"><span class="nav-icon">💣</span>Boom City</a>
+                <a href="/profile" class="nav-item"><span class="nav-icon">👤</span>Профиль</a>
+                <a href="/admin" class="nav-item admin-only" style="display:none;"><span class="nav-icon">⚙️</span>Админка</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="online-stats"><span class="online-dot"></span><span id="onlineCount">1,234</span> онлайн</div>
+                <div class="version">CashX v1.0 | GoldenX style</div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <div class="balance-panel">
+                    <div class="balance-card">
+                        <span class="balance-label">💰 ОСНОВНОЙ</span>
+                        <span class="balance-value" id="mainBalance">0</span>
+                    </div>
+                    <div class="balance-card bonus">
+                        <span class="balance-label">🎁 БОНУСНЫЙ</span>
+                        <span class="balance-value" id="bonusBalance">0</span>
+                    </div>
+                </div>
+                <div class="user-actions">
+                    <span id="usernameDisplay" class="username">Гость</span>
+                    <button id="logoutBtn" class="logout-btn" style="display:none;">🚪</button>
+                </div>
+            </header>
+
+            <!-- Блок для уведомлений -->
+            <div id="notificationArea" class="notification-area"></div>
+
+            <!-- Контент страницы -->
+            <div class="page-content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/script.js"></script>
+    <script src="/static/chat.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
