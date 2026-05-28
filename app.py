@@ -79,11 +79,6 @@ def game_page(game_name):
         return render_template(f'game_{game_name}.html')
     return "Game not found", 404
 
-@app.route('/games')
-@login_required_page
-def games():
-    return render_template('games.html')
-
 # ---------- API Авторизации ----------
 @app.route('/api/register', methods=['POST'])
 def register():
