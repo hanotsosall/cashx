@@ -3,6 +3,7 @@ let currentUser = null;
 const balanceSpan = document.getElementById('balanceAmount');
 const usernameSpan = document.getElementById('usernameDisplay');
 const logoutBtn = document.getElementById('logoutBtn');
+const loginNavBtn = document.getElementById('loginNavBtn');
 const toastEl = document.getElementById('toast');
 
 function showToast(msg, isError = false) {
@@ -17,8 +18,7 @@ async function updateBalanceUI() {
     try {
         const res = await fetch('/api/balance');
         if (res.status === 401) {
-            // Сессия истекла – показываем вход
-            showAuthPage();
+            showAuthState(false);
             return;
         }
         const data = await res.json();
@@ -26,18 +26,18 @@ async function updateBalanceUI() {
     } catch(e) {}
 }
 
-function showAuthPage() {
-    document.getElementById('authPage')?.style.setProperty('display', 'flex');
-    document.getElementById('gameArea')?.style.setProperty('display', 'none');
-    if (logoutBtn) logoutBtn.style.display = 'none';
-    if (usernameSpan) usernameSpan.innerText = 'Гость';
-    currentUser = null;
-    localStorage.removeItem('cashx_user');
-}
-
-function showGameArea() {
-    document.getElementById('authPage')?.style.setProperty('display', 'none');
-    document.getElementById('gameArea')?.style.setProperty('display', 'block');
+function showAuthState(isLoggedIn) {
+    if (isLoggedIn) {
+        if (loginNavBtn) loginNavBtn.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'inline-block';
+        if (usernameSpan && currentUser) usernameSpan.innerText = currentUser.username;
+    } else {
+        if (loginNavBtn) loginNavBtn.style.display = 'inline-block';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (usernameSpan) usernameSpan.innerText = 'Гость';
+        currentUser = null;
+        localStorage.removeItem('cashx_user');
+    }
 }
 
 async function login(username, password) {
@@ -51,12 +51,9 @@ async function login(username, password) {
         if (data.error) throw new Error(data.error);
         currentUser = data.user;
         localStorage.setItem('cashx_user', JSON.stringify(currentUser));
-        if (usernameSpan) usernameSpan.innerText = currentUser.username;
-        if (logoutBtn) logoutBtn.style.display = 'inline-block';
-        showGameArea();
+        showAuthState(true);
         await updateBalanceUI();
         showToast(`Добро пожаловать, ${currentUser.username}!`);
-        loadReferralLink();
     } catch(err) {
         showToast(err.message, true);
     }
@@ -71,7 +68,7 @@ async function register(username, password, refCode) {
         });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
-        showToast('Регистрация успешна! Выполняется вход...');
+        showToast('Регистрация успешна! Вход...');
         login(username, password);
     } catch(err) {
         showToast(err.message, true);
@@ -80,8 +77,7 @@ async function register(username, password, refCode) {
 
 async function logout() {
     await fetch('/api/logout', { method: 'POST' });
-    localStorage.removeItem('cashx_user');
-    showAuthPage();
+    showAuthState(false);
     showToast('Вы вышли');
 }
 
@@ -92,32 +88,24 @@ async function checkAuth() {
             const data = await res.json();
             currentUser = data;
             localStorage.setItem('cashx_user', JSON.stringify(currentUser));
-            if (usernameSpan) usernameSpan.innerText = currentUser.username;
-            if (logoutBtn) logoutBtn.style.display = 'inline-block';
-            showGameArea();
+            showAuthState(true);
             updateBalanceUI();
-            loadReferralLink();
         } else {
-            showAuthPage();
+            showAuthState(false);
         }
     } catch(e) {
-        showAuthPage();
+        showAuthState(false);
     }
 }
 
-async function loadReferralLink() {
-    if (!currentUser) return;
-    try {
-        const res = await fetch('/api/referral/link');
-        const data = await res.json();
-        const refInput = document.getElementById('refLink');
-        if (refInput) refInput.value = data.link;
-    } catch(e) {}
-}
-
-// ---------- Обработчики при загрузке страницы ----------
 document.addEventListener('DOMContentLoaded', () => {
-    // Формы авторизации
+    // Кнопка входа в шапке
+    if (loginNavBtn) {
+        loginNavBtn.onclick = () => window.location.href = '/login';
+    }
+    if (logoutBtn) logoutBtn.onclick = logout;
+
+    // Авторизация через отдельную страницу (формы на /login)
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
     if (loginForm) {
@@ -137,30 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
             register(username, password, ref);
         };
     }
-    if (logoutBtn) logoutBtn.onclick = logout;
-    // Проверка существующей сессии
+
     checkAuth();
-
-    // Мобильное меню
-    const menuToggle = document.getElementById('mobileMenuToggle');
-    const sidebar = document.getElementById('sidebar');
-    if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-            menuToggle.innerHTML = sidebar.classList.contains('open') ? '✕' : '☰';
-        });
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.remove('open');
-                    menuToggle.innerHTML = '☰';
-                }
-            });
-        });
-    }
-
-    // Обновление баланса каждые 5 секунд
-    setInterval(() => {
-        if (currentUser) updateBalanceUI();
-    }, 5000);
+    setInterval(() => { if (currentUser) updateBalanceUI(); }, 5000);
 });
