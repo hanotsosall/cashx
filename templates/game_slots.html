@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="game-container">
+    <h2>🎰 Слоты CashX</h2>
+    <div class="slot-machine">
+        <canvas id="slotCanvas" width="800" height="480"></canvas>
+        <div class="game-controls">
+            <div class="bet-selector">
+                <button class="bet-btn" data-bet="5">5</button>
+                <button class="bet-btn" data-bet="10">10</button>
+                <button class="bet-btn" data-bet="25">25</button>
+                <button class="bet-btn" data-bet="50">50</button>
+                <input type="number" id="slotBet" value="10" min="1">
+            </div>
+            <button id="spinBtn" class="game-action-btn">🎰 КРУТИТЬ</button>
+        </div>
+        <div id="slotResult" class="result-area"></div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    const canvas = document.getElementById('slotCanvas');
+    const ctx = canvas.getContext('2d');
+    const REEL_W = 140, SYMB_H = 140, REELS = 5, ROWS = 3;
+    function drawReels(reels) {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        for(let c=0;c<REELS;c++) for(let r=0;r<ROWS;r++) {
+            const sym = reels[c][r];
+            const x = 20 + c*(REEL_W+8);
+            const y = 20 + r*SYMB_H;
+            ctx.fillStyle = '#2a1a0a';
+            ctx.fillRect(x,y,REEL_W-6,SYMB_H-8);
+            ctx.fillStyle = '#ffdd99';
+            ctx.font = '56px "Segoe UI Emoji"';
+            ctx.fillText(sym, x+35, y+90);
+        }
+    }
+    async function spin() {
+        let bet = parseInt(document.getElementById('slotBet').value);
+        if(isNaN(bet)) bet=10;
+        const res = await fetch('/api/slots/spin', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet})});
+        const data = await res.json();
+        if(data.error) return alert(data.error);
+        // анимация
+        for(let i=0;i<10;i++) {
+            const fake = Array(5).fill().map(()=>Array(3).fill('💎'));
+            drawReels(fake);
+            await new Promise(r=>setTimeout(r,50));
+        }
+        drawReels(data.reels);
+        if(data.win>0) {
+            document.getElementById('slotResult').innerHTML = `✨ ВЫИГРЫШ: ${data.win} ✨`;
+            await fetch('/api/place_bet', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet:0, win:data.win})});
+        } else {
+            document.getElementById('slotResult').innerHTML = `😭 ПРОИГРЫШ`;
+            await fetch('/api/place_bet', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet, win:0})});
+        }
+        updateBalanceUI();
+    }
+    document.getElementById('spinBtn').onclick = spin;
+    async function updateBalanceUI() {
+        const res = await fetch('/api/user');
+        const data = await res.json();
+        document.getElementById('mainBalance').innerText = data.balance;
+        document.getElementById('bonusBalance').innerText = data.bonus_balance;
+    }
+</script>
+{% endblock %}
