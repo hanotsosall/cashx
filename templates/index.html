@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="hero-section">
+    <h1 class="hero-title">Добро пожаловать в <span class="gold">CASH<span class="accent">X</span></span></h1>
+    <p class="hero-subtitle">Самые популярные игры, моментальные выплаты, бонусы каждый день</p>
+    <div class="hero-buttons">
+        <a href="/games" class="btn btn-primary">🎮 Играть сейчас</a>
+        <a href="#bonus" class="btn btn-secondary">🎁 Получить бонус</a>
+    </div>
+</div>
+
+<div class="games-grid-home">
+    <div class="game-card" onclick="location.href='/game/slots'">
+        <div class="game-icon">🎰</div>
+        <h3>Slots</h3>
+        <p>Классические и видео-слоты</p>
+    </div>
+    <div class="game-card" onclick="location.href='/game/mines'">
+        <div class="game-icon">💣</div>
+        <h3>Mines</h3>
+        <p>Не подорвись на минах</p>
+    </div>
+    <div class="game-card" onclick="location.href='/game/crash'">
+        <div class="game-icon">💥</div>
+        <h3>Crash</h3>
+        <p>Успей забрать выигрыш</p>
+    </div>
+    <div class="game-card" onclick="location.href='/game/dice'">
+        <div class="game-icon">🎲</div>
+        <h3>Dice</h3>
+        <p>Кубики с множителями</p>
+    </div>
+    <div class="game-card" onclick="location.href='/game/coinflip'">
+        <div class="game-icon">🪙</div>
+        <h3>Coin Flip</h3>
+        <p>Орёл или решка</p>
+    </div>
+</div>
+
+<div class="features-section" id="bonus">
+    <h2>Почему CashX?</h2>
+    <div class="features-grid">
+        <div class="feature">🎁 Бонус 5000 при регистрации</div>
+        <div class="feature">💬 Живой чат</div>
+        <div class="feature">🤝 Реферальная программа</div>
+        <div class="feature">⚡ Мгновенные выводы</div>
+        <div class="feature">🎰 1000+ игр</div>
+        <div class="feature">🔒 Безопасность</div>
+    </div>
+</div>
+{% endblock %}
