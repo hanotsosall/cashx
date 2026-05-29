@@ -366,6 +366,16 @@ def boomcity_spin():
     db.session.commit()
     return jsonify({'win': win, 'balance': user.balance})
 
+@app.route('/api/provider_games')
+def get_provider_games():
+    games = ProviderGame.query.filter_by(is_active=True).all()
+    return jsonify([{
+        'id': g.id,
+        'name': g.name,
+        'provider': g.provider,
+        'iframe_url': g.iframe_url
+    } for g in games])
+
 # ---------- Дополнительные API (бонусы, рефералы, чат, админка) ----------
 @app.route('/api/bonus/apply', methods=['POST'])
 @login_required
