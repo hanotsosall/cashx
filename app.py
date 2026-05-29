@@ -376,6 +376,12 @@ def get_provider_games():
         'iframe_url': g.iframe_url
     } for g in games])
 
+@app.route('/play/provider/<int:game_id>')
+@login_required
+def play_provider_game(game_id):
+    game = ProviderGame.query.get_or_404(game_id)
+    return render_template('play_provider_game.html', game=game)
+
 # ---------- Дополнительные API (бонусы, рефералы, чат, админка) ----------
 @app.route('/api/bonus/apply', methods=['POST'])
 @login_required
