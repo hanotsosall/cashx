@@ -56,3 +56,12 @@ class ChatMessage(db.Model):
     username = db.Column(db.String(80))
     message = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class ProviderGame(db.Model):
+    __tablename__ = 'provider_games'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    provider = db.Column(db.String(50), nullable=False)  # Pragmatic, NetEnt и т.д.
+    iframe_url = db.Column(db.String(500), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
