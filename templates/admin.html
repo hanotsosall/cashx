@@ -1,5 +1,14 @@
 {% extends "layout.html" %}
 {% block content %}
+
+<div class="admin-section">
+    <h3>➕ Добавить игру провайдера</h3>
+    <input type="text" id="gameName" placeholder="Название игры">
+    <input type="text" id="gameProvider" placeholder="Провайдер (Pragmatic, NetEnt...)">
+    <input type="text" id="gameIframeUrl" placeholder="Iframe URL">
+    <button id="addGameBtn" class="btn-primary">Добавить</button>
+</div>
+
 <div class="admin-container">
     <h1><i class="fas fa-shield-alt"></i> Админ-панель CashX</h1>
     <p class="admin-desc">Управление пользователями, балансами и бонус-кодами</p>
@@ -102,6 +111,22 @@
     };
 
     loadUsers();
+
+document.getElementById('addGameBtn').onclick = async () => {
+        const name = document.getElementById('gameName').value;
+        const provider = document.getElementById('gameProvider').value;
+        const iframe_url = document.getElementById('gameIframeUrl').value;
+        if(!name || !provider || !iframe_url) return showToast('Заполните все поля', true);
+        const res = await fetch('/api/admin/add_provider_game', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, provider, iframe_url })
+        });
+        const data = await res.json();
+        if(data.error) showToast(data.error, true);
+        else showToast('Игра добавлена');
+    };
+    
 </script>
 
 <style>
