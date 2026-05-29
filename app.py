@@ -376,6 +376,10 @@ def get_provider_games():
         'iframe_url': g.iframe_url
     } for g in games])
 
+@app.route('/provider_games')
+def provider_games():
+    return render_template('provider_games.html')
+
 @app.route('/play/provider/<int:game_id>')
 @login_required
 def play_provider_game(game_id):
