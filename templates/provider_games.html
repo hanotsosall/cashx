@@ -1,0 +1,95 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="provider-games-page">
+    <h2><i class="fas fa-gamepad"></i> Демо-игры от провайдеров</h2>
+    <p>Играйте в слоты от Pragmatic, NetEnt, Evoplay и других на виртуальные деньги</p>
+    <div class="games-filter">
+        <button class="filter-btn active" data-provider="all">Все</button>
+        <button class="filter-btn" data-provider="Pragmatic">Pragmatic Play</button>
+        <button class="filter-btn" data-provider="NetEnt">NetEnt</button>
+        <button class="filter-btn" data-provider="Evoplay">Evoplay</button>
+    </div>
+    <div class="provider-games-grid" id="providerGamesGrid"></div>
+</div>
+
+<script>
+    let allGames = [];
+
+    async function loadGames() {
+        const res = await fetch('/api/provider_games');
+        const games = await res.json();
+        allGames = games;
+        renderGames('all');
+    }
+
+    function renderGames(provider) {
+        const filtered = provider === 'all' ? allGames : allGames.filter(g => g.provider === provider);
+        const container = document.getElementById('providerGamesGrid');
+        container.innerHTML = filtered.map(game => `
+            <div class="game-card" onclick="window.open('/play/provider/${game.id}', '_blank')">
+                <i class="fas fa-gamepad"></i>
+                <h3>${escapeHtml(game.name)}</h3>
+                <p>${game.provider}</p>
+                <button class="btn-primary">Играть демо</button>
+            </div>
+        `).join('');
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderGames(btn.getAttribute('data-provider'));
+        };
+    });
+
+    loadGames();
+</script>
+
+<style>
+    .provider-games-page {
+        background: rgba(10,12,21,0.7);
+        border-radius: 48px;
+        padding: 32px;
+    }
+    .games-filter {
+        display: flex;
+        gap: 15px;
+        margin: 20px 0;
+    }
+    .filter-btn {
+        background: #1e2130;
+        border: 1px solid #2f3448;
+        padding: 8px 20px;
+        border-radius: 40px;
+        color: #a0a5c0;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+        background: #f5b042;
+        color: #0a0c15;
+        border-color: #f5b042;
+    }
+    .provider-games-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 25px;
+        margin-top: 30px;
+    }
+    .game-card {
+        background: #1a1d2f;
+        border-radius: 32px;
+        padding: 20px;
+        width: 200px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .game-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        border: 1px solid #f5b042;
+    }
+</style>
+{% endblock %}
