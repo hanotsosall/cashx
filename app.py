@@ -428,6 +428,20 @@ def admin_set_balance():
         return jsonify({'ok': True})
     return jsonify({'error': 'User not found'}), 404
 
+@app.route('/api/admin/add_provider_game', methods=['POST'])
+@admin_required
+def add_provider_game():
+    data = request.json
+    name = data.get('name')
+    provider = data.get('provider')
+    iframe_url = data.get('iframe_url')
+    if not name or not provider or not iframe_url:
+        return jsonify({'error': 'Missing fields'}), 400
+    game = ProviderGame(name=name, provider=provider, iframe_url=iframe_url)
+    db.session.add(game)
+    db.session.commit()
+    return jsonify({'ok': True})
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
